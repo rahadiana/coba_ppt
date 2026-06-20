@@ -7,18 +7,18 @@ LLM bisa generate langsung via python3 -c tanpa file ini.
 
 CARA PAKAI:
     # Via content module (namai *_tmp.py biar di-ignore git):
-    CONTENT_MODULE=content_xxx_tmp python3 buat_ppt_generik.py
+    CONTENT_MODULE=content_xxx_tmp python3 src/buat_ppt_generik.py
 
     # Langsung dari CLI (LLM workflow — tanpa file content):
     python3 -c "
-    from ppt_engine import Engine
+    from src.ppt_engine import Engine
     SLIDES = [{'type':'cover','data':{...}}]
     Engine().build(SLIDES, source_text='Sumber: ...', output_path='output.pptx')
     "
 
 STRUKTUR FILE:
-    ppt_engine.py               ← ENGINE REUSABLE
-    buat_ppt_generik.py         ← ENTRY POINT (file ini)
+    src/ppt_engine.py           ← ENGINE REUSABLE
+    src/buat_ppt_generik.py     ← ENTRY POINT (file ini)
     *_tmp.py                    ← CONTENT MODULE (di-ignore git via .gitignore)
 
 NAMA FILE:
@@ -27,6 +27,9 @@ NAMA FILE:
 """
 
 import os, sys, importlib
+
+# Biar import ppt_engine dll. tetap jalan dari mana pun dipanggil
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def main():
@@ -39,18 +42,18 @@ def main():
         print()
         print("Content module tidak ditentukan.")
         print()
-        print("🔥 LLM Workflow — langsung dari CLI:")
+        print("🔥 LLM Workflow — langsung dari CLI (dari root folder):")
         print()
-        print("  python3 -c \"from ppt_engine import Engine;\"")
+        print("  python3 -c \"from src.ppt_engine import Engine\"")
         print("  python3 -c \"Engine().build(SLIDES, ...)\"")
         print()
-        print("📦 Content module — jika sudah punya file *_tmp.py:")
+        print("📦 Content module — jika sudah punya file *_tmp.py (dari root folder):")
         print()
-        print("  CONTENT_MODULE=content_xxx_tmp python3 buat_ppt_generik.py")
+        print("  CONTENT_MODULE=content_xxx_tmp python3 src/buat_ppt_generik.py")
         print()
         print("📌 Convention: namai file *_tmp.py biar di-ignore git")
         print()
-        print("📖 Baca panduan lengkap: cat agent.md")
+        print("📖 Baca panduan lengkap: cat src/agent.md")
         print("=" * 60)
         sys.exit(0)
     

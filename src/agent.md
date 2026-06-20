@@ -36,7 +36,7 @@ with open("dokumen.pdf", "rb") as f:
 
 **Step 3 — Generate langsung**
 ```python
-from ppt_engine import Engine
+from src.ppt_engine import Engine
 
 SLIDES = [
     {"type": "cover", "data": {...}},
@@ -56,7 +56,7 @@ print("✅ PPT siap: output.pptx")
 Jalankan dengan:
 ```bash
 python3 -c "
-from ppt_engine import Engine
+from src.ppt_engine import Engine
 # ... paste SLIDES di sini ...
 engine = Engine()
 engine.build(SLIDES, source_text='...', output_path='output.pptx')
@@ -327,7 +327,7 @@ Jika user hanya memberi **satu warna utama**, engine bisa otomatis generate selu
 ### Cara Pakai
 
 ```python
-from ppt_engine import Engine
+from src.ppt_engine import Engine
 
 engine = Engine(primary_color="#2563EB")
 # → otomatis generate palette, print WCAG report:
@@ -341,7 +341,7 @@ engine = Engine(primary_color="#2563EB")
 Atau langsung dari CLI:
 
 ```bash
-python3 ppt_engine.py "#E91E63"
+python3 src/ppt_engine.py "#E91E63"
 # → generate 3-slide PPT + palette report
 ```
 
@@ -477,7 +477,7 @@ Gunakan emoji yang relevan:
 ### Opsi 1 — Langsung dari CLI (paling cepat)
 ```bash
 python3 -c "
-from ppt_engine import Engine
+from src.ppt_engine import Engine
 SLIDES = [  # ← paste hasil analisis di sini
     {'type':'cover','data':{...}},
     {'type':'section','data':{...}},
@@ -490,7 +490,7 @@ engine.build(SLIDES, source_text='Sumber: ...', output_path='output.pptx')
 ### Opsi 2 — Lewat file temp (untuk konten besar)
 ```python
 # _gen.py — buat, jalankan, hapus
-from ppt_engine import Engine
+from src.ppt_engine import Engine
 SLIDES = [...]  # konten
 Engine().build(SLIDES, source_text='...', output_path='output.pptx')
 ```
@@ -498,10 +498,10 @@ Engine().build(SLIDES, source_text='...', output_path='output.pptx')
 python3 _gen.py && rm _gen.py
 ```
 
-### Opsi 3 — Lewat buat_ppt_generik.py (dengan file content)
+### Opsi 3 — Lewat src/buat_ppt_generik.py (dengan file content)
 Hanya jika konten akan dipakai berulang:
 ```bash
-CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py
+CONTENT_MODULE=content_xxx python3 src/buat_ppt_generik.py
 ```
 
 ---
@@ -510,11 +510,11 @@ CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py
 
 | File | Fungsi | Wajib? |
 |------|--------|--------|
-| `ppt_engine.py` | Engine — LayoutFrame + 11 archetype builders | ✅ Ya |
-| `buat_ppt_generik.py` | Entry point untuk content file | 🔧 Optional |
-| `fix_pptx_zip.py` | Utility fix ZIP order PPTX corrupt | 🔧 Optional |
+| `src/ppt_engine.py` | Engine — LayoutFrame + 11 archetype builders | ✅ Ya |
+| `src/buat_ppt_generik.py` | Entry point untuk content file | 🔧 Optional |
+| `src/fix_pptx_zip.py` | Utility fix ZIP order PPTX corrupt | 🔧 Optional |
 
-> **LLM tidak perlu** menyentuh `ppt_engine.py`. Cukup baca `agent.md` ini, extract konten dari sumber, lalu panggil engine langsung.
+> **LLM tidak perlu** menyentuh `src/ppt_engine.py`. Cukup baca `src/agent.md` ini, extract konten dari sumber, lalu panggil engine langsung.
 
 ---
 
@@ -544,7 +544,9 @@ python3 -c "import pptx; print(pptx.__version__)"
 
 **Cek engine:**
 ```bash
-python3 -c "from ppt_engine import Engine; print('✅ Engine siap')"
+python3 -c "from src.ppt_engine import Engine; print('✅ Engine siap')"
+
+
 # Harus: ✅ Engine siap
 ```
 
@@ -562,7 +564,7 @@ pip3 install python-pptx
 ```bash
 python3 -c "
 import sys, pptx
-from ppt_engine import Engine, LayoutFrame, Colors
+from src.ppt_engine import Engine, LayoutFrame, Colors
 print(f'✅ Python   : {sys.version}')
 print(f'✅ python-pptx: {pptx.__version__}')
 print(f'✅ Engine   : OK — {len(Engine().build.__code__.co_varnames)} params')
@@ -576,7 +578,7 @@ print('🎯 Stack siap — bisa generate PPT')
 | Error | Penyebab | Solusi |
 |-------|----------|--------|
 | `ModuleNotFoundError: pptx` | python-pptx belum install | `pip install python-pptx` |
-| `ModuleNotFoundError: ppt_engine` | engine file tidak ada | Cek `ls ppt_engine.py` |
+| `ModuleNotFoundError: src.ppt_engine` | engine file tidak ada | Cek `ls src/ppt_engine.py` |
 | `SyntaxError` | Python < 3.8 | Upgrade Python |
 
 ---
@@ -1130,12 +1132,12 @@ Jangan ulang layout yang sama. Bergantian antar slide:
 
 ## 🆕 QA Workflow — Verifikasi Visual
 
-Gunakan `qa.py` untuk render PPTX ke gambar dan inspeksi.
+Gunakan `src/qa.py` untuk render PPTX ke gambar dan inspeksi.
 
 ### Quick Text Check
 
 ```bash
-python3 qa.py --text-only output.pptx
+python3 src/qa.py --text-only output.pptx
 ```
 
 Cek: placeholder text, urutan konten, typo.
@@ -1147,7 +1149,7 @@ Cek: placeholder text, urutan konten, typo.
 sudo apt install -y libreoffice poppler-utils
 pip install markitdown[pptx]
 
-python3 qa.py output.pptx --render-only
+python3 src/qa.py output.pptx --render-only
 # Output: output_dir/slide-01.jpg, slide-02.jpg, ...
 ```
 
@@ -1155,16 +1157,16 @@ python3 qa.py output.pptx --render-only
 
 ```bash
 # 1. Generate PPT
-python3 -c "from ppt_engine import *; ..."
+python3 -c "from src.ppt_engine import *; ..."
 
 # 2. Extract text + cek placeholder
-python3 qa.py --text-only output.pptx
+python3 src/qa.py --text-only output.pptx
 
 # 3. Render ke images
-python3 qa.py --render-only output.pptx --dpi 150
+python3 src/qa.py --render-only output.pptx --dpi 150
 
 # 4. Subagent inspect — via task() tool
-python3 qa.py --inspect output.pptx
+python3 src/qa.py --inspect output.pptx
 # → Output siap di-copy ke tool task()
 ```
 
@@ -1207,23 +1209,23 @@ agentic_delegate(
 
 ## 🆕 Template Editing — Unpack / Edit / Pack
 
-Gunakan `pptx_tools.py` untuk edit konten PPTX existing.
+Gunakan `src/pptx_tools.py` untuk edit konten PPTX existing.
 
 ### Workflow
 
 ```bash
 # 1. Unpack — extract ke direktori
-python3 pptx_tools.py unpack template.pptx unpacked/
+python3 src/pptx_tools.py unpack template.pptx unpacked/
 
 # 2. List slide content
-python3 pptx_tools.py list template.pptx
+python3 src/pptx_tools.py list template.pptx
 
 # 3. Edit slide XML (gunakan Edit tool)
 # unpacked/ppt/slides/slide1.xml
 # Cari <a:t> untuk teks, ganti dengan konten baru
 
 # 4. Pack — repack ke PPTX baru
-python3 pptx_tools.py pack unpacked/ output.pptx
+python3 src/pptx_tools.py pack unpacked/ output.pptx
 ```
 
 ### Kapan Pakai Template Editing
@@ -1231,9 +1233,9 @@ python3 pptx_tools.py pack unpacked/ output.pptx
 | Situasi | Pakai |
 |---------|-------|
 | Buat PPT dari awal | `Engine(primary_color=...)` |
-| Edit teks di PPT existing | `pptx_tools.py unpack → edit → pack` |
+| Edit teks di PPT existing | `src/pptx_tools.py unpack → edit → pack` |
 | Butuh template layout tertentu | Unpack template → edit konten → pack |
-| Content extraction | `pptx_tools.py list` atau `qa.py --text-only` |
+| Content extraction | `src/pptx_tools.py list` atau `src/qa.py --text-only` |
 
 ---
 

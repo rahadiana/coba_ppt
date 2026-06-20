@@ -5,7 +5,11 @@
     "errorRecoveries": [],
     "navigations": [],
     "delegations": [],
-    "skillLookups": []
+    "skillLookups": [
+      {
+        "found": true
+      }
+    ]
   },
-  "updatedAt": "2026-06-20T14:12:57.712Z"
+  "updatedAt": "2026-06-20T14:38:18.708Z"
 }
