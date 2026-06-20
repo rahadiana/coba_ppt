@@ -22,7 +22,7 @@ from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
-import math, os
+import math, os, colorsys
 
 
 # ═══════════════════════════════════════════════════════════
@@ -76,6 +76,297 @@ class Colors:
         if fallback is None:
             fallback = Colors.NAVY
         return getattr(Colors, name.upper(), fallback)
+
+    @staticmethod
+    def to_rgb_tuple(c):
+        """RGBColor atau tuple → (r,g,b) tuple."""
+        return (c[0], c[1], c[2])
+
+    @staticmethod
+    def hex_to_tuple(hex_str):
+        """'#2563EB' → (37, 99, 235)."""
+        h = hex_str.lstrip('#')
+        return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+    @staticmethod
+    def make(color):
+        """(r,g,b) atau hex string → RGBColor."""
+        if isinstance(color, RGBColor):
+            return color
+        if isinstance(color, str):
+            return Colors.from_hex(color)
+        if isinstance(color, (tuple, list)):
+            return RGBColor(int(color[0]), int(color[1]), int(color[2]))
+        return color
+
+
+# ═══════════════════════════════════════════════════════════
+# COLOR THEORY — WCAG, Harmony Rules, Auto Palette
+# ═══════════════════════════════════════════════════════════
+
+# ─── WCAG 2.1 Luminance & Contrast ───
+
+def _linearize(c):
+    """sRGB channel linearization per WCAG 2.1."""
+    c = c / 255.0
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+def _get_rgb(c):
+    """Ensure (r,g,b) tuple — works with RGBColor, tuple, list."""
+    return int(c[0]), int(c[1]), int(c[2])
+
+def relative_luminance(r, g, b):
+    """WCAG 2.1: L = 0.2126R + 0.7152G + 0.0722B."""
+    return 0.2126 * _linearize(r) + 0.7152 * _linearize(g) + 0.0722 * _linearize(b)
+
+def contrast_ratio(c1, c2):
+    """WCAG 2.1 contrast ratio: (L₁+0.05)/(L₂+0.05)."""
+    r1, g1, b1 = _get_rgb(c1)
+    r2, g2, b2 = _get_rgb(c2)
+    l1 = relative_luminance(r1, g1, b1)
+    l2 = relative_luminance(r2, g2, b2)
+    lighter, darker = max(l1, l2), min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+def wcag_aa(cr, text_size='normal'):
+    """True if ≥4.5:1 (normal) or ≥3:1 (large)."""
+    return cr >= (4.5 if text_size == 'normal' else 3.0)
+
+def wcag_aaa(cr):
+    """True if ≥7:1 (normal)."""
+    return cr >= 7.0
+
+# ─── RGB ↔ HLS ───
+
+def rgb_to_hls(r, g, b):
+    """(r,g,b) in 0-255 → (h, l, s) where h∈[0,360), l,s∈[0,100]."""
+    rn, gn, bn = r / 255.0, g / 255.0, b / 255.0
+    h, l, s = colorsys.rgb_to_hls(rn, gn, bn)
+    return h * 360, l * 100, s * 100
+
+def hls_to_rgb(h, l, s):
+    """(h, l, s) → (r,g,b) in 0-255."""
+    r, g, b = colorsys.hls_to_rgb(h / 360.0, l / 100.0, s / 100.0)
+    return round(r * 255), round(g * 255), round(b * 255)
+
+# ─── WCAG Auto-Adjust —──
+
+def adjust_to_wcag(rgb, bg=(255, 255, 255), target=4.5):
+    """
+    Binary-search lightness to meet `target` contrast ratio against `bg`.
+    For light bg → darken; for dark bg → lighten.
+    Returns (r,g,b) tuple.
+    
+    Strategy:
+        - Light bg: we need text DARKER than bg. Search [0, L] for 
+          the HIGHEST (lightest) L that still passes.
+        - Dark bg: we need text LIGHTER than bg. Search [L, 100] for 
+          the LOWEST (darkest) L that still passes.
+    """
+    cr = contrast_ratio(rgb, bg)
+    if cr >= target:
+        return rgb
+
+    r1, g1, b1 = _get_rgb(rgb)
+    h, l, s = rgb_to_hls(r1, g1, b1)
+    br, bg_, bb = _get_rgb(bg)
+    bg_lum = relative_luminance(br, bg_, bb)
+
+    if bg_lum > 0.5:          # light bg → text must be DARKER
+        lo, hi = 0.0, l       # lo=very dark (passes), hi=current (may fail)
+        for _ in range(30):
+            mid = (lo + hi) / 2
+            test = hls_to_rgb(h, mid, s)
+            if contrast_ratio(test, bg) >= target:
+                lo = mid      # passes → try lighter
+            else:
+                hi = mid      # fails → need darker
+            if hi - lo < 0.3:
+                break
+        return hls_to_rgb(h, lo, s)   # lo = lightest that passes
+    else:                      # dark bg → text must be LIGHTER
+        lo, hi = l, 100.0     # lo=current (may fail), hi=very light (passes)
+        for _ in range(30):
+            mid = (lo + hi) / 2
+            test = hls_to_rgb(h, mid, s)
+            if contrast_ratio(test, bg) >= target:
+                hi = mid      # passes → try darker
+            else:
+                lo = mid      # fails → need lighter
+            if hi - lo < 0.3:
+                break
+        return hls_to_rgb(h, hi, s)   # hi = darkest that passes
+
+
+# ═══════════════════════════════════════════════════════════
+# PALETTE GENERATOR — Dari satu primary color
+# ═══════════════════════════════════════════════════════════
+
+class PaletteGenerator:
+    """
+    Generate palet 60-30-10 + 4 semantic + WCAG-verified dari satu warna utama.
+    
+    Rules:
+        - 60% Dominant:  dark background (primary hue, low L)
+        - 30% Secondary: light bg (primary hue, high L)
+        - 10% Accent:    split-complementary hue
+        - Semantic:      tetradic rotation (BLUE, TEAL, WARM, RED)
+        - Semua teks:    WCAG AA ≥4.5:1
+    
+    Usage:
+        pg = PaletteGenerator("#2563EB")
+        palette = pg.generate()   # → dict { name: RGBColor, ... }
+     
+    Publikasi acuan:
+        - Color-by-concept association (Rathore et al., VIS 2019, arXiv:1908.00220)
+        - Culture-inspired palette gen (Li et al., 2021, arXiv:2102.05231)
+    """
+    
+    # Harmony rule generators: given hue h, return list of hue angles
+    HARMONY = {
+        'complementary':    lambda h: [(h + 180) % 360],
+        'analogous':        lambda h: [(h - 30) % 360, h, (h + 30) % 360],
+        'triadic':          lambda h: [h, (h + 120) % 360, (h + 240) % 360],
+        'split_comp':       lambda h: [h, (h + 150) % 360, (h + 210) % 360],
+        'tetradic':         lambda h: [h, (h + 90) % 360, (h + 180) % 360, (h + 270) % 360],
+    }
+    
+    SEMANTIC_LABELS = ['BLUE', 'TEAL', 'WARM', 'RED']
+    
+    def __init__(self, primary_hex):
+        """
+        Args:
+            primary_hex: hex string '#2563EB' atau '2563EB'
+        """
+        self.prim = Colors.hex_to_tuple(primary_hex)
+        self.h, self.l, self.s = rgb_to_hls(*self.prim)
+    
+    # ── Helpers ──
+    
+    def _hls(self, h, l, s=None):
+        """Single hue variant → (r,g,b). Clamp saturation."""
+        if s is None:
+            s = self.s
+        return hls_to_rgb(h % 360, max(0, min(100, l)), max(5, min(100, s)))
+    
+    def _vary(self, h, l_delta=0, s_delta=0):
+        """Vary lightness & saturation from primary, keep hue."""
+        return self._hls(
+            h if h is not None else self.h,
+            max(0, min(100, self.l + l_delta)),
+            max(5, min(100, self.s + s_delta))
+        )
+    
+    def _distinct_hues(self, n=4):
+        """Generate n evenly-spaced hues from primary (tetradic)."""
+        return [(self.h + i * 90) % 360 for i in range(n)]
+    
+    def _wcag_report(self, palette):
+        """Print WCAG AA verification for key combinations."""
+        lines = []
+        for name, cr_bg, cr_bg_label, text_size in [
+            ('TEXT_D on WHITE',  contrast_ratio(palette['TEXT_D'], (255,255,255)), 'white', 'normal'),
+            ('TEXT_M on NAVY',   contrast_ratio(palette['TEXT_M'], palette['NAVY']), 'navy', 'normal'),
+            ('TEXT_L on WHITE',  contrast_ratio(palette['TEXT_L'], (255,255,255)), 'white', 'normal'),
+            ('GOLD on NAVY',     contrast_ratio(palette['GOLD'], palette['NAVY']), 'navy', 'normal'),
+            ('BLUE on WHITE',    contrast_ratio(palette['BLUE'], (255,255,255)), 'white', 'normal'),
+            ('TEAL on WHITE',    contrast_ratio(palette['TEAL'], (255,255,255)), 'white', 'normal'),
+            ('WARM on WHITE',    contrast_ratio(palette['WARM'], (255,255,255)), 'white', 'normal'),
+            ('RED on WHITE',     contrast_ratio(palette['RED'], (255,255,255)), 'white', 'normal'),
+        ]:
+            status = '✅' if wcag_aa(cr_bg, text_size) else '❌'
+            lines.append(f"  {status} {name}: {cr_bg:.1f}:1")
+        return '\n'.join(lines)
+    
+    def generate(self, verbose=False):
+        """
+        Generate complete 60-30-10 + semantic palette.
+        
+        Args:
+            verbose: print WCAG report
+        
+        Returns:
+            dict { 'NAVY': RGBColor, 'BLUE': RGBColor, ... }
+        """
+        h, l, s = self.h, self.l, self.s
+        
+        # ── Clamp extremes ──
+        sat = max(25, min(85, s))     # keep saturation viable
+        lum = max(20, min(80, l))     # keep luminance reasonable
+        
+        # ════ 60% — Dark backgrounds (dominant) ════
+        navy   = self._hls(h, 10, min(sat, 70))
+        navy_l = self._hls(h, 18, min(sat, 60))
+        navy_d = self._hls(h, 6,  min(sat, 65))
+        navy_m = self._hls(h, 32, min(sat, 50))
+        
+        # ════ 30% — Light backgrounds (secondary) ════
+        white  = (255, 255, 255)
+        off_w  = (245, 247, 250)
+        ice    = self._hls(h, 92, min(sat, 12))
+        ice_d  = self._hls(h, 84, min(sat, 16))
+        
+        # ════ 10% — Accent (split-complementary for best contrast) ════
+        comp_hues = self.HARMONY['split_comp'](h)
+        accent_h = comp_hues[1] if len(comp_hues) > 1 else (h + 180) % 360
+        accent   = self._hls(accent_h, 42, min(sat + 10, 92))
+        accent_l = self._hls(accent_h, 58, min(sat + 10, 88))
+        
+        # ════ Semantic colors (tetradic rotation) ════
+        # Note: labels BLUE/TEAL/WARM/RED are arbitrary; actual hue depends on
+        # primary. These are 4 evenly-spaced hues (90° apart) for 4 semantic slots.
+        sem_hues = self._distinct_hues(4)
+        sem_colors = []
+        for i, sh in enumerate(sem_hues):
+            sc = self._hls(sh, 40 + (i * 3), min(sat + 10, 88))
+            sc = adjust_to_wcag(sc, bg=white, target=4.5)
+            sem_colors.append(sc)
+        
+        # ════ Text colors — WCAG AA ════
+        text_d = (26, 26, 46)          # near-black — 17+:1 on white
+        
+        # TEXT_M on navy
+        text_m_raw = self._hls(h, 64, min(sat, 20))
+        text_m = adjust_to_wcag(text_m_raw, bg=navy, target=4.5)
+        
+        # TEXT_L on white
+        text_l_raw = self._hls(h, 38, min(sat, 12))
+        text_l = adjust_to_wcag(text_l_raw, bg=white, target=4.5)
+        
+        # Ensure accent passes on navy
+        accent   = adjust_to_wcag(accent, bg=navy, target=4.5)
+        accent_l = adjust_to_wcag(accent_l, bg=navy, target=4.5)
+        
+        # ── Assemble ──
+        palette = {
+            'NAVY':   Colors.make(navy),
+            'NAVY_L': Colors.make(navy_l),
+            'NAVY_D': Colors.make(navy_d),
+            'NAVY_M': Colors.make(navy_m),
+            
+            'WHITE':  Colors.make(white),
+            'OFF_W':  Colors.make(off_w),
+            'ICE':    Colors.make(ice),
+            'ICE_D':  Colors.make(ice_d),
+            
+            'GOLD':   Colors.make(accent),
+            'GOLD_L': Colors.make(accent_l),
+            
+            'TEXT_D': Colors.make(text_d),
+            'TEXT_M': Colors.make(text_m),
+            'TEXT_L': Colors.make(text_l),
+            
+            'BLUE':   Colors.make(sem_colors[0]),
+            'TEAL':   Colors.make(sem_colors[1]),
+            'WARM':   Colors.make(sem_colors[2]),
+            'RED':    Colors.make(sem_colors[3]),
+        }
+        
+        if verbose:
+            print(f"🎨 Palette dari #{self.prim[0]:02X}{self.prim[1]:02X}{self.prim[2]:02X}")
+            print(self._wcag_report(palette))
+        
+        return palette
 
 
 # ═══════════════════════════════════════════════════════════
@@ -231,9 +522,28 @@ class Engine:
         }
     """
     
-    def __init__(self, colors=None):
+    def __init__(self, colors=None, primary_color=None):
+        """
+        Args:
+            colors: instance of Colors (or object with same attributes) 
+                    for custom palette. Defaults to Colors().
+            primary_color: hex string like '#2563EB'. If given, 
+                           PaletteGenerator auto-generates full WCAG AA 
+                           palette from this primary. Overrides `colors`.
+        """
         self.L = LayoutFrame()
-        self.C = colors or Colors()
+        
+        if primary_color:
+            pg = PaletteGenerator(primary_color)
+            pal = pg.generate()
+            self.C = type('DynamicColors', (), pal)()
+            self._palette_report = pg._wcag_report(pal)
+            print(f"🎨 Auto-palette dari {primary_color}")
+            print(self._palette_report)
+        else:
+            self.C = colors or Colors()
+            self._palette_report = ""
+        
         self.prs = None
         self.pg_counter = [0]
         self.source_text = ""
@@ -924,8 +1234,67 @@ class Engine:
 # SHORTCUT — langsung jalan kalau dipanggil
 # ═══════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════
+# WCAG AA REPORT UTILITY
+# ═══════════════════════════════════════════════════════════
+
+def palette_report(primary_hex):
+    """Generate & print WCAG AA report for a primary color."""
+    pg = PaletteGenerator(primary_hex)
+    pal = pg.generate(verbose=True)
+    return pal
+
+
 if __name__ == "__main__":
-    # Demo / test
+    import sys
+    
+    # ── Jika arg: generate palette report ──
+    if len(sys.argv) > 1 and sys.argv[1] != 'demo':
+        primary = sys.argv[1]
+        if primary.startswith('#'):
+            pg = PaletteGenerator(primary)
+            pal = pg.generate(verbose=True)
+            
+            # Also build a demo PPT showing the palette
+            h, _, _ = rgb_to_hls(*Colors.hex_to_tuple(primary))
+            comp_h = (h + 180) % 360
+            
+            slides = [
+                {"type": "cover", "data": {
+                    "pre_title": "CUSTOM PALETTE", "city": "COLOR THEORY",
+                    "main_title": f"Primary #{primary.lstrip('#')}",
+                    "main_subtitle": f"Hue {h:.0f}° · Harmony split-comp · Tetradic semantic",
+                    "display_title": f"AUTO\nWCAG AA",
+                    "badge_text": f"60-30-10  ·  {sum(v is not None for v in pal.values())} colors  ·  All ≥4.5:1"
+                }},
+                {"type": "card_grid", "data": {
+                    "title": "Semantic Colors on White Background",
+                    "cards": [
+                        {"icon": "🔵", "title": "BLUE — Info",   "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(pal['BLUE'])),  "items": [f"CR: {contrast_ratio(Colors.to_rgb_tuple(pal['BLUE']), (255,255,255)):.1f}:1 ✅"]},
+                        {"icon": "🟢", "title": "TEAL — Success", "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(pal['TEAL'])), "items": [f"CR: {contrast_ratio(Colors.to_rgb_tuple(pal['TEAL']), (255,255,255)):.1f}:1 ✅"]},
+                        {"icon": "🟠", "title": "WARM — Warning", "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(pal['WARM'])), "items": [f"CR: {contrast_ratio(Colors.to_rgb_tuple(pal['WARM']), (255,255,255)):.1f}:1 ✅"]},
+                        {"icon": "🔴", "title": "RED — Danger",   "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(pal['RED'])),  "items": [f"CR: {contrast_ratio(Colors.to_rgb_tuple(pal['RED']), (255,255,255)):.1f}:1 ✅"]},
+                    ]
+                }},
+                {"type": "closing", "data": {
+                    "pre_title": f"Primary #{primary.lstrip('#')}",
+                    "main_title": "WCAG AA SELESAI",
+                    "subtitle": "All colors verified ≥4.5:1 — no color bias",
+                    "source": "Color Theory · Split-complementary + Tetradic"
+                }},
+            ]
+            out_path = f"/tmp/palette_{primary.lstrip('#')}.pptx"
+            engine = Engine(primary_color=primary)
+            engine.build(slides, source_text=f"Auto palette dari {primary}", output_path=out_path)
+            print(f"📊 PPT: {out_path} ({len(engine.prs.slides)} slides)")
+        else:
+            print("Usage: python3 ppt_engine.py <hex_color> # e.g. #E91E63")
+        sys.exit(0)
+    
+    # ── Default demo ──
+    print("=" * 60)
+    print("DEMO 1: Default Colors palette")
+    print("=" * 60)
     slides = [
         {"type": "cover", "data": {
             "pre_title": "DEMO", "city": "TEST CITY",
@@ -939,4 +1308,46 @@ if __name__ == "__main__":
     ]
     engine = Engine()
     engine.build(slides, source_text="Sumber: Demo", output_path="/tmp/ppt_engine_demo.pptx")
-    print(f"✅ Demo OK: /tmp/ppt_engine_demo.pptx ({len(engine.prs.slides)} slide)")
+    print(f"✅ Demo 1 OK: /tmp/ppt_engine_demo.pptx ({len(engine.prs.slides)} slides)")
+    
+    print()
+    print("=" * 60)
+    print("DEMO 2: Custom primary_color='#E91E63' (Pink)")
+    print("=" * 60)
+    pg = PaletteGenerator("#E91E63")
+    pal = pg.generate(verbose=True)
+    slides2 = [
+        {"type": "cover", "data": {
+            "pre_title": "CUSTOM PALETTE", "city": "PINK THEME",
+            "main_title": "Primary #E91E63",
+            "display_title": "AUTO\nPALETTE",
+            "badge_text": "Split-comp · Tetradic · WCAG AA ✅"
+        }},
+        {"type": "closing", "data": {
+            "pre_title": "#E91E63", "main_title": "SELESAI",
+            "subtitle": "Auto-generated palette", "source": "PaletteGenerator"
+        }},
+    ]
+    engine2 = Engine(primary_color="#E91E63")
+    engine2.build(slides2, source_text="Custom palette", output_path="/tmp/ppt_palette_demo.pptx")
+    print(f"✅ Demo 2 OK: /tmp/ppt_palette_demo.pptx ({len(engine2.prs.slides)} slides)")
+    
+    print()
+    print("=" * 60)
+    print("DEMO 3: Custom primary_color='#4CAF50' (Natural Green)")
+    print("=" * 60)
+    engine3 = Engine(primary_color="#4CAF50")
+    slides3 = [
+        {"type": "cover", "data": {
+            "pre_title": "CUSTOM PALETTE", "city": "GREEN THEME",
+            "main_title": "Primary #4CAF50",
+            "display_title": "NATURAL\nGREEN",
+            "badge_text": "Split-comp · Tetradic · WCAG AA ✅"
+        }},
+        {"type": "closing", "data": {
+            "pre_title": "#4CAF50", "main_title": "SELESAI",
+            "subtitle": "Auto-generated palette", "source": "PaletteGenerator"
+        }},
+    ]
+    engine3.build(slides3, source_text="Green palette", output_path="/tmp/ppt_green_demo.pptx")
+    print(f"✅ Demo 3 OK: /tmp/ppt_green_demo.pptx ({len(engine3.prs.slides)} slides)")

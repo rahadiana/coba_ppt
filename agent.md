@@ -320,6 +320,65 @@ for i, card in enumerate(cards):
 
 ---
 
+## 🎨 Auto Palette — Dari Satu Warna Utama 🆕
+
+Jika user hanya memberi **satu warna utama**, engine bisa otomatis generate seluruh palette 60-30-10 + 4 warna semantik, semuanya WCAG AA verified.
+
+### Cara Pakai
+
+```python
+from ppt_engine import Engine
+
+engine = Engine(primary_color="#2563EB")
+# → otomatis generate palette, print WCAG report:
+#   ✅ TEXT_D on WHITE: 17.1:1
+#   ✅ BLUE on WHITE: 6.3:1
+#   ✅ TEAL on WHITE: 5.0:1
+#   ✅ WARM on WHITE: 4.6:1
+#   ✅ RED on WHITE: 4.5:1
+```
+
+Atau langsung dari CLI:
+
+```bash
+python3 ppt_engine.py "#E91E63"
+# → generate 3-slide PPT + palette report
+```
+
+### Color Harmony Rules
+
+| Rule | Deskripsi | Digunakan Untuk |
+|------|-----------|----------------|
+| **Split-complementary** | Base hue + 2 adjacent to complement (150°, 210°) | **10% Accent** (GOLD) — kontras maksimal di navy |
+| **Tetradic** | 4 hues 90° apart | **Semantic colors** (BLUE, TEAL, WARM, RED) — 4 slot berbeda |
+| **Monochromatic** | Same hue, varied lightness (6%-92%) | **60% Dominant** (NAVY variants) + **30% Secondary** (ICE variants) |
+| **WCAG Auto-Adjust** | Binary search lightness hingga ≥4.5:1 | Semua teks dan warna semantik |
+
+### Output Palette (dict → `Colors`-like object)
+
+```python
+engine.C.NAVY   # → RGBColor — dark background
+engine.C.GOLD   # → RGBColor — accent
+engine.C.BLUE   # → RGBColor — semantic 1
+engine.C.TEAL   # → RGBColor — semantic 2
+engine.C.WARM   # → RGBColor — semantic 3
+engine.C.RED    # → RGBColor — semantic 4
+engine.C.TEXT_D # → RGBColor — body text
+engine.C.TEXT_M # → RGBColor — subtitle on navy
+engine.C.TEXT_L # → RGBColor — footer
+```
+
+> **Catatan**: Label `BLUE`/`TEAL`/`WARM`/`RED` adalah nama slot semantik. Hue aktual tergantung primary color (tetradic rotation). Misal primary pink → BLUE adalah merah-jambu, RED adalah ungu-biru.
+
+### Acuan
+
+- WCAG 2.1 Relative Luminance & Contrast Ratio (Web Content Accessibility Guidelines)
+- Color-by-concept association (Rathore et al., VIS 2019, [arXiv:1908.00220](https://arxiv.org/abs/1908.00220))
+- Culture-inspired palette generation (Li et al., 2021, [arXiv:2102.05231](https://arxiv.org/abs/2102.05231))
+- ITU-R BT.709 sRGB linearization for luminance (Rec. 709 / IEC 61966-2-1)
+
+---
+
 ## 📐 Layout Rules — Jangan Dilanggar!
 
 ### Zona Slide (16:9 = 13.333" × 7.5")
