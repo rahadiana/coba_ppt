@@ -8,7 +8,7 @@
 
 ## 🤖 LLM Workflow (Cara Agent Menggunakan Skill Ini)
 
-**Tidak perlu** menulis file `content_*.py` dulu. LLM bisa langsung — kalau terpaksa bikin file `.py`, namai `*_tmp.py` (e.g. `content_regulasi_tmp.py`).
+**Tidak perlu** menulis file `content_*.py` dulu. LLM bisa langsung:
 
 ```
 [Baca dokumen sumber]
@@ -1283,5 +1283,4 @@ Closing: "TERIMA KASIH"
 - [ ] Rotasi warna card agar variatif
 - [ ] Hitung jumlah slide: cover + toc + (section+isi)×bab + closing
 - [ ] Generate langsung via `python3 -c "..."` — tanpa file content
-- [ ] Kalau terpaksa bikin file `.py`, namai dengan suffix **`_tmp.py`** (e.g. `content_peraturan_tmp.py`) biar di-ignore git
 - [ ] Verifikasi file PPTX bisa dibuka

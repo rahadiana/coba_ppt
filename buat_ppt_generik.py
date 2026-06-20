@@ -6,8 +6,8 @@ Entry point untuk generate PPT dari content module.
 LLM bisa generate langsung via python3 -c tanpa file ini.
 
 CARA PAKAI:
-    # Via content module (jika sudah punya file content):
-    CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py
+    # Via content module (namai *_tmp.py biar di-ignore git):
+    CONTENT_MODULE=content_xxx_tmp python3 buat_ppt_generik.py
 
     # Langsung dari CLI (LLM workflow — tanpa file content):
     python3 -c "
@@ -19,7 +19,11 @@ CARA PAKAI:
 STRUKTUR FILE:
     ppt_engine.py               ← ENGINE REUSABLE
     buat_ppt_generik.py         ← ENTRY POINT (file ini)
-    agent.md                    ← PANDUAN LLM
+    *_tmp.py                    ← CONTENT MODULE (di-ignore git via .gitignore)
+
+NAMA FILE:
+    Content module harus pakai suffix *_tmp.py biar tidak ikut ter-track git.
+    Contoh: content_regulasi_tmp.py, content_trigonometri_tmp.py
 """
 
 import os, sys, importlib
@@ -40,9 +44,11 @@ def main():
         print("  python3 -c \"from ppt_engine import Engine;\"")
         print("  python3 -c \"Engine().build(SLIDES, ...)\"")
         print()
-        print("📦 Content module — jika sudah punya file:")
+        print("📦 Content module — jika sudah punya file *_tmp.py:")
         print()
-        print("  CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py")
+        print("  CONTENT_MODULE=content_xxx_tmp python3 buat_ppt_generik.py")
+        print()
+        print("📌 Convention: namai file *_tmp.py biar di-ignore git")
         print()
         print("📖 Baca panduan lengkap: cat agent.md")
         print("=" * 60)
@@ -52,7 +58,8 @@ def main():
         content = importlib.import_module(content_module_name)
     except ImportError:
         print(f"❌ Content module '{content_module_name}' tidak ditemukan.")
-        print(f"   Pastikan file content_{content_module_name}.py ada.")
+        print(f"   Pastikan file {content_module_name}.py ada.")
+        print(f"   📌 Convention: pakai suffix _tmp.py (e.g. content_xxx_tmp.py)")
         sys.exit(1)
     
     from ppt_engine import Engine
