@@ -1016,6 +1016,202 @@ Emoji di dalam lingkaran:
 
 ---
 
+## 🆕 Font Pairings — Header / Body Font
+
+Engine punya 8 font style yang bisa dipilih via `font_style=` parameter.
+
+| Style | Header | Body | Mono | Kesan |
+|-------|--------|------|------|-------|
+| `classic` (default) | Georgia | Calibri | Consolas | Profesional, formal |
+| `modern` | Arial Black | Arial | Consolas | Berani, kontemporer |
+| `clean` | Calibri | Calibri Light | Consolas | Minimalis, bersih |
+| `formal` | Cambria | Calibri | Consolas | Resmi, akademik |
+| `tech` | Consolas | Calibri | Consolas | Teknis, modern |
+| `elegant` | Palatino | Garamond | Consolas | Elegan, klasik |
+| `bold` | Impact | Arial | Consolas | Sangat berani, poster |
+| `friendly` | Trebuchet MS | Calibri | Consolas | Ramah, approachable |
+
+### Cara Pakai
+
+```python
+engine = Engine(font_style="modern")           # Arial Black + Arial
+engine = Engine(font_style="formal")            # Cambria + Calibri
+engine = Engine(primary_color="#E91E63", font_style="modern")
+```
+
+### Di Slide Dict
+
+Font otomatis terpakai di semua elemen. Untuk override per-elemen, bisa via data dict (coming soon).
+
+---
+
+## 🆕 Icon System — Built-in Shapes + Emoji
+
+Engine punya `_add_icon()` yang bikin lingkaran berwarna + icon di dalamnya.
+
+### Shape Icons (built-in, tanpa dependency)
+
+| Nama | Simbol | Contoh |
+|------|--------|--------|
+| `'check'` | ✓ | Centang hijau |
+| `'x'` | ✗ | Silang merah |
+| `'arrow'` | → | Panah |
+| `'star'` | ★ | Bintang |
+| `'circle'` | ● | Lingkaran |
+| `'info'` | ℹ | Informasi |
+| `'warning'` | ⚠ | Peringatan |
+| `'question'` | ? | Pertanyaan |
+
+### Cara Pakai di Card Grid
+
+```python
+# Shape icon (string name)
+{"icon": "check", "title": "Selesai", "color": "TEAL", "items": [...]}
+
+# Emoji (tetap support)
+{"icon": "🔵", "title": "Info", "color": "BLUE", "items": [...]}
+```
+
+### Cara Pakai di Kode Engine
+
+```python
+# Shape icon in colored circle
+engine._add_icon(slide, x, y, 0.42, icon="warning", fill=engine.C.WARM)
+
+# Emoji
+engine._add_icon(slide, x, y, 0.42, icon="⚠️", fill=engine.C.WARM)
+```
+
+---
+
+## 🆕 Design Guidance — Bikin Slide yang Tidak Membosankan
+
+Berdasarkan praktik dari Anthropic PPTX Skill + 60-30-10 rule.
+
+### Sebelum Mulai
+
+1. **Pilih palette yang spesifik untuk TOPIK** — bukan biru generik. Kalau warna bisa dipindah ke PPT topic lain dan masih cocok, warnanya belum spesifik.
+2. **Dominance > equality** — 60-30-10. Satu warna dominan, 1-2 pendukung, 1 aksen tajam.
+3. **Dark/light contrast** — Dark bg untuk cover+closing, light untuk konten ("sandwich").
+4. **Commit ke 1 visual motif** — Pilih satu elemen khas dan ulangi: icon dalam lingkaran, border tebal di satu sisi, shape dekoratif. Bawa ke semua slide.
+
+### Variasi Layout
+
+Jangan ulang layout yang sama. Bergantian antar slide:
+
+| Layout | Cocok Untuk | Archetype |
+|--------|-------------|-----------|
+| **Full card grid** | 4-8 item setara | `card_grid` |
+| **Two column** | Perbandingan 2 sisi | `two_col` |
+| **Number callout** | Angka-angka penting | `callout` |
+| **Flow horizontal** | Proses / tahapan | `flow` |
+| **Table** | Data terstruktur | `table` |
+| **Content polos** | Intro / penutup bab | `content` |
+
+### Visual Polish
+
+- **Icons in circles** untuk setiap item (via `_add_icon`)
+- **Gold bar** sebagai aksen header (otomatis oleh engine)
+- **Bottom footer** konsisten (otomatis)
+- **Action title** di navy header — kalimat kesimpulan, bukan topik
+
+### Common Mistakes — Hindari!
+
+| ❌ Salah | ✅ Benar |
+|----------|----------|
+| Action title = topik ("Bab I") | Action title = kesimpulan ("7 Definisi Kunci...") |
+| Semua slide layout sama | Variasi card_grid, two_col, flow, callout |
+| Body text di-center | Left-align body; center hanya judul |
+| Terlalu rapat (< 0.3" gap) | 0.3" minimum antar elemen |
+| Warna rendah kontras | Semua WCAG AA ≥4.5:1 (engine auto-verify) |
+| Text-only slides | Tambah icon, shape, atau elemen visual |
+
+---
+
+## 🆕 QA Workflow — Verifikasi Visual
+
+Gunakan `qa.py` untuk render PPTX ke gambar dan inspeksi.
+
+### Quick Text Check
+
+```bash
+python3 qa.py --text-only output.pptx
+```
+
+Cek: placeholder text, urutan konten, typo.
+
+### Render to Images
+
+```bash
+# Butuh LibreOffice + poppler-utils
+sudo apt install -y libreoffice poppler-utils
+pip install markitdown[pptx]
+
+python3 qa.py output.pptx --render-only
+# Output: output_dir/slide-01.jpg, slide-02.jpg, ...
+```
+
+### Full QA Loop
+
+```bash
+# 1. Generate PPT
+python3 -c "from ppt_engine import *; ..."
+
+# 2. Extract text + cek placeholder
+python3 qa.py --text-only output.pptx
+
+# 3. Render ke images
+python3 qa.py --render-only output.pptx --dpi 150
+
+# 4. Subagent inspect
+python3 qa.py --inspect output.pptx
+# → Muncul prompt yang bisa dikirim ke subagent visual
+```
+
+### Verification Loop (Wajib!)
+
+1. Generate slides → Extract text → Render images
+2. **Cari masalah** (overlap, overflow, contrast, gaps)
+3. Fix masalah
+4. **Re-verify** slide yang berubah
+5. Ulang sampai tidak ada issue baru
+
+> ⚠️ **Gunakan subagent untuk inspeksi visual** — matamu sudah capek lihat kode dan akan melihat apa yang kamu harapkan, bukan apa yang sebenarnya ada.
+
+---
+
+## 🆕 Template Editing — Unpack / Edit / Pack
+
+Gunakan `pptx_tools.py` untuk edit konten PPTX existing.
+
+### Workflow
+
+```bash
+# 1. Unpack — extract ke direktori
+python3 pptx_tools.py unpack template.pptx unpacked/
+
+# 2. List slide content
+python3 pptx_tools.py list template.pptx
+
+# 3. Edit slide XML (gunakan Edit tool)
+# unpacked/ppt/slides/slide1.xml
+# Cari <a:t> untuk teks, ganti dengan konten baru
+
+# 4. Pack — repack ke PPTX baru
+python3 pptx_tools.py pack unpacked/ output.pptx
+```
+
+### Kapan Pakai Template Editing
+
+| Situasi | Pakai |
+|---------|-------|
+| Buat PPT dari awal | `Engine(primary_color=...)` |
+| Edit teks di PPT existing | `pptx_tools.py unpack → edit → pack` |
+| Butuh template layout tertentu | Unpack template → edit konten → pack |
+| Content extraction | `pptx_tools.py list` atau `qa.py --text-only` |
+
+---
+
 ## ⚠️ Troubleshooting
 
 | Masalah | Penyebab | Solusi |

@@ -522,7 +522,21 @@ class Engine:
         }
     """
     
-    def __init__(self, colors=None, primary_color=None):
+    # ── Font Pairings ──
+    # Sumber: Anthropic PPTX Skill — header/body pairing
+    FONT_PAIRS = {
+        'modern':  {'header': 'Arial Black',   'body': 'Arial',         'mono': 'Consolas'},
+        'classic': {'header': 'Georgia',       'body': 'Calibri',       'mono': 'Consolas'},
+        'clean':   {'header': 'Calibri',       'body': 'Calibri Light', 'mono': 'Consolas'},
+        'formal':  {'header': 'Cambria',       'body': 'Calibri',       'mono': 'Consolas'},
+        'tech':    {'header': 'Consolas',       'body': 'Calibri',       'mono': 'Consolas'},
+        'elegant': {'header': 'Palatino',      'body': 'Garamond',      'mono': 'Consolas'},
+        'bold':    {'header': 'Impact',         'body': 'Arial',         'mono': 'Consolas'},
+        'friendly':{'header': 'Trebuchet MS',  'body': 'Calibri',       'mono': 'Consolas'},
+    }
+    DEFAULT_FONT_STYLE = 'classic'
+    
+    def __init__(self, colors=None, primary_color=None, font_style=None):
         """
         Args:
             colors: instance of Colors (or object with same attributes) 
@@ -530,8 +544,18 @@ class Engine:
             primary_color: hex string like '#2563EB'. If given, 
                            PaletteGenerator auto-generates full WCAG AA 
                            palette from this primary. Overrides `colors`.
+            font_style: one of 'modern','classic','clean','formal','tech',
+                        'elegant','bold','friendly'. Default: 'classic'.
         """
         self.L = LayoutFrame()
+        
+        # Font
+        fs = font_style or Engine.DEFAULT_FONT_STYLE
+        pair = Engine.FONT_PAIRS.get(fs, Engine.FONT_PAIRS['classic'])
+        self.FONT_H = pair['header']
+        self.FONT_B = pair['body']
+        self.FONT_M = pair['mono']
+        self._font_style = fs
         
         if primary_color:
             pg = PaletteGenerator(primary_color)
@@ -617,7 +641,18 @@ class Engine:
     
     def _add_box(self, slide, left, top, width, height, text,
                  size=12, bold=False, color=None, align=PP_ALIGN.LEFT,
-                 font="Calibri", vAlign=MSO_ANCHOR.TOP):
+                 font=None, vAlign=MSO_ANCHOR.TOP, font_name=None):
+        """
+        Add a text box. Default font = self.FONT_B (body).
+        Use font='header' for header font, font='mono' for monospace.
+        """
+        fname = font_name or self.FONT_B
+        if font == 'header':
+            fname = self.FONT_H
+        elif font == 'mono':
+            fname = self.FONT_M
+        elif font is not None:
+            fname = font
         if color is None:
             color = self.C.TEXT_D
         else:
@@ -632,7 +667,7 @@ class Engine:
         p.font.size = Pt(size)
         p.font.bold = bold
         p.font.color.rgb = color
-        p.font.name = font
+        p.font.name = fname
         p.alignment = align
         p.space_after = Pt(0)
         p.space_before = Pt(0)
@@ -683,8 +718,54 @@ class Engine:
         sh.line.fill.background()
         return sh
     
+    def _add_icon(self, slide, left, top, size, icon=None, fill=None, 
+                  icon_color=None):
+        """
+        Add a colored circle with an icon inside.
+        
+        Args:
+            icon: str — emoji char, or shape name from:
+                  'check','x','arrow','star','circle','info','warning','question'
+            fill: background color (default: self.C.BLUE)
+            icon_color: icon color (default: WHITE)
+        
+        Built-in shapes use Unicode symbols, no external deps needed.
+        """
+        if fill is None: fill = self.C.BLUE
+        if icon_color is None: icon_color = self.C.WHITE
+        
+        # Shape icons map
+        SHAPE_ICONS = {
+            'check':    '✓',
+            'x':        '✗',
+            'arrow':    '→',
+            'star':     '★',
+            'circle':   '●',
+            'info':     'ℹ',
+            'warning':  '⚠',
+            'question': '?',
+        }
+        
+        # Resolve icon
+        icon_str = SHAPE_ICONS.get(icon, icon) if isinstance(icon, str) else icon
+        if not icon_str:
+            icon_str = '●'
+        
+        circle = self._add_oval(slide, left, top, size, fill=fill)
+        ico_size = size * 0.6
+        ico_x = left + (size - ico_size) / 2
+        ico_y = top + (size - ico_size) / 2 - 0.02
+        self._add_box(slide, ico_x, ico_y, ico_size, ico_size,
+                      icon_str, round(size * 28), color=icon_color,
+                      align=PP_ALIGN.CENTER)
+        return circle
+    
     def _text_to_shape(self, shape, text, size=12, bold=False, color=None,
-                       align=PP_ALIGN.LEFT, font="Calibri"):
+                       align=PP_ALIGN.LEFT, font=None):
+        if font is None: fname = self.FONT_B
+        elif font == 'header': fname = self.FONT_H
+        elif font == 'mono': fname = self.FONT_M
+        else: fname = font
         if color is None: color = self.C.TEXT_D
         else: color = self._resolve_color(color)
         tf = shape.text_frame
@@ -694,7 +775,7 @@ class Engine:
         p.font.size = Pt(size)
         p.font.bold = bold
         p.font.color.rgb = color
-        p.font.name = font
+        p.font.name = fname
         p.alignment = align
         return tf
     
@@ -712,7 +793,8 @@ class Engine:
         self._add_shape(slide, MSO_SHAPE.RECTANGLE,
                         self.L.MARGIN_H, 0.12, 0.07, 0.55, fill=self.C.GOLD)
         self._add_box(slide, self.L.MARGIN_H + 0.22, 0.15,
-                      self.L.cw - 0.5, 0.48, title, 20, bold=True, color=self.C.WHITE)
+                      self.L.cw - 0.5, 0.48, title, 20, bold=True,
+                      color=self.C.WHITE, font='header')
         if subtitle:
             self._add_box(slide, self.L.MARGIN_H + 0.22, 0.63,
                           self.L.cw - 0.5, 0.28, subtitle, 9, color=self.C.TEXT_L)
@@ -927,11 +1009,8 @@ class Engine:
             item_layout = self.L.card_item_layout(ch, has_icon=bool(ic), n_items=len(items))
             
             if ic:
-                self._add_oval(s, cx + self.L.CARD_PAD, cy + item_layout['icon_y'],
-                               item_layout['icon_size'], clr)
-                self._add_box(s, cx + self.L.CARD_PAD, cy + item_layout['icon_y'],
-                              item_layout['icon_size'], item_layout['icon_size'],
-                              ic, 13, color=self.C.WHITE, align=PP_ALIGN.CENTER)
+                self._add_icon(s, cx + self.L.CARD_PAD, cy + item_layout['icon_y'],
+                               item_layout['icon_size'], icon=ic, fill=clr)
                 title_y = cy + item_layout['title_y']
             else:
                 title_y = cy + self.L.CARD_PAD
@@ -1091,7 +1170,11 @@ class Engine:
         self._footer(s)
     
     def _set_cell(self, cell, text, size=11, bold=False, color=None,
-                  align=PP_ALIGN.LEFT, fill=None):
+                  align=PP_ALIGN.LEFT, fill=None, font=None):
+        if font is None: fname = self.FONT_B
+        elif font == 'header': fname = self.FONT_H
+        elif font == 'mono': fname = self.FONT_M
+        else: fname = font
         if color is None: color = self.C.TEXT_D
         else: color = self._resolve_color(color)
         cell.text = ""
@@ -1100,7 +1183,7 @@ class Engine:
         p.font.size = Pt(size)
         p.font.bold = bold
         p.font.color.rgb = color
-        p.font.name = "Calibri"
+        p.font.name = fname
         p.alignment = align
         cell.text_frame.word_wrap = True
         cell.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -1351,3 +1434,32 @@ if __name__ == "__main__":
     ]
     engine3.build(slides3, source_text="Green palette", output_path="/tmp/ppt_green_demo.pptx")
     print(f"✅ Demo 3 OK: /tmp/ppt_green_demo.pptx ({len(engine3.prs.slides)} slides)")
+    
+    print()
+    print("=" * 60)
+    print("DEMO 4: Font style 'modern' + primary_color='#8E44AD' (Purple)")
+    print("=" * 60)
+    engine4 = Engine(primary_color="#8E44AD", font_style="modern")
+    slides4 = [
+        {"type": "cover", "data": {
+            "pre_title": "FONT STYLE", "city": "MODERN",
+            "main_title": "Arial Black + Arial",
+            "display_title": "FONT\nPAIRING",
+            "badge_text": "Modern · Purple · WCAG AA ✅"
+        }},
+        {"type": "card_grid", "data": {
+            "title": "Icons — Built-in Shapes",
+            "cards": [
+                {"icon": "check", "title": "Check", "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(engine4.C.BLUE)), "items": ["✓ icon = 'check'"]},
+                {"icon": "star",  "title": "Star",  "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(engine4.C.TEAL)), "items": ["★ icon = 'star'"]},
+                {"icon": "warning","title": "Warning","color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(engine4.C.WARM)),"items": ["⚠ icon = 'warning'"]},
+                {"icon": "info",  "title": "Info",  "color": "#{:02X}{:02X}{:02X}".format(*Colors.to_rgb_tuple(engine4.C.RED)), "items": ["ℹ icon = 'info'"]},
+            ]
+        }},
+        {"type": "closing", "data": {
+            "pre_title": "Font: Arial Black + Arial", "main_title": "SELESAI",
+            "subtitle": "Font style 'modern'", "source": "ppt_engine.py"
+        }},
+    ]
+    engine4.build(slides4, source_text="Font style demo", output_path="/tmp/ppt_font_demo.pptx")
+    print(f"✅ Demo 4 OK: /tmp/ppt_font_demo.pptx ({len(engine4.prs.slides)} slides)")
