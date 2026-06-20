@@ -1,20 +1,49 @@
 # Pengetahuan — Proyek PPT Generator
 
-## Arsitektur 3 File
+## Arsitektur Terkini (src/)
 
 ```
 📁 coba_ppt/
-├── ppt_engine.py               ← Engine reusable (tidak perlu diubah)
-├── content_*.py                ← Content data (ganti untuk PPT beda topik)
-├── buat_ppt_generik.py         ← Entry point (panggil aja)
-└── fix_pptx_zip.py             ← Utility fix ZIP PptxGenJS
+├── src/                          ← Semua skrip
+│   ├── __init__.py               ← Biar from src.ppt_engine import Engine
+│   ├── ppt_engine.py             ← Engine utama (LayoutFrame + archetypes + PaletteGenerator)
+│   ├── buat_ppt_generik.py       ← Entry point (CONTENT_MODULE=... python3 src/buat_ppt_generik.py)
+│   ├── create_ppt.py             ← Legacy standalone script
+│   ├── qa.py                     ← Visual QA: render PPTX → images (butuh LibreOffice + pdftoppm)
+│   ├── pptx_tools.py             ← Template editing: unpack/list/pack
+│   ├── fix_pptx_zip.py           ← Fix ZIP entry order PPTX corrupt (PptxGenJS issue)
+├── agent.md                      ← Panduan LLM (di root)
+├── *_tmp.py                      ← Content module (di-ignore git via .gitignore)
+├── .gitignore                    ← *_tmp.py diabaikan
+└── .agentic/
+    └── pengetahuan.md             ← File ini
 ```
 
-### Cara Pakai
+### Cara Pakai Berbagai Mode
+
 ```bash
-python3 buat_ppt_generik.py                          # content default
-CONTENT_MODULE=content_my_topic python3 buat_ppt_generik.py  # content custom
+# Mode 1 — LLM inline (tanpa file)
+python3 -c "from src.ppt_engine import Engine; Engine().build(SLIDES, ...)"
+
+# Mode 2 — Content module (_tmp.py)
+CONTENT_MODULE=content_xxx_tmp python3 src/buat_ppt_generik.py
+
+# Mode 3 — Auto palette dari 1 warna
+python3 -c "from src.ppt_engine import Engine; Engine(primary_color='#E91E63')"
+
+# Mode 4 — Font style
+python3 -c "from src.ppt_engine import Engine; Engine(font_style='modern')"
+
+# Mode 5 — QA render
+python3 src/qa.py output.pptx --inspect
+
+# Mode 6 — Template editing
+python3 src/pptx_tools.py list template.pptx
 ```
+
+### Naming Convention
+- Content module → **`*_tmp.py`** (di-ignore git)
+- Skrip utama → **`src/*.py`** (tracked)
 
 ---
 
@@ -24,7 +53,7 @@ CONTENT_MODULE=content_my_topic python3 buat_ppt_generik.py  # content custom
 
 - ECMA-376 OPC §9.1.2.1: `[Content_Types].xml` WAJIB sebagai stream pertama dalam ZIP.
 - PptxGenJS menaruh `[Content_Types].xml` di entry #19 → PowerPoint tolak.
-- **Fix**: `python3 fix_pptx_zip.py <file.pptx>` — tulis ulang ZIP dengan entry order benar.
+- **Fix**: `python3 src/fix_pptx_zip.py <file.pptx>` — tulis ulang ZIP dengan entry order benar.
 - **Alternative**: `python-pptx` selalu generate `[Content_Types].xml` di posisi 0 ✅
 
 ---
@@ -55,19 +84,75 @@ Content Area: cx=0.6, cy=1.15, cw=12.133, ch=5.85
 | | `height = n_lines × pt × 1.2 / 72` |
 | **Safe Item Height** | `max(text_height + 0.05, min_h)` |
 
-### CPI (Calibri characters-per-inch)
-| Font Size | CPI |
-|-----------|-----|
-| 9pt | 14 |
-| 11pt | 12 |
-| 13pt | 10 |
-| 20pt | 6.5 |
-| 32pt | 4 |
-| 40pt | 3 |
+---
+
+## Font Pairings — 8 Style
+
+| Style | Header | Body | Kesan |
+|-------|--------|------|-------|
+| `classic` | Georgia | Calibri | Profesional, formal |
+| `modern` | Arial Black | Arial | Berani, kontemporer |
+| `clean` | Calibri | Calibri Light | Minimalis |
+| `formal` | Cambria | Calibri | Resmi, akademik |
+| `tech` | Consolas | Calibri | Teknis |
+| `elegant` | Palatino | Garamond | Elegan, klasik |
+| `bold` | Impact | Arial | Sangat berani |
+| `friendly` | Trebuchet MS | Calibri | Ramah |
+
+```python
+Engine(font_style="modern")
+Engine(font_style="formal", primary_color="#E91E63")
+```
 
 ---
 
-## 10 Slide Archetype
+## Icon System — 8 Built-in Shapes + Emoji
+
+Engine method `_add_icon(slide, x, y, size, icon="...", fill=..., icon_color=...)`
+
+| Nama | Simbol | Penggunaan |
+|------|--------|------------|
+| `'check'` | ✓ | Centang / selesai |
+| `'x'` | ✗ | Silang / salah |
+| `'arrow'` | → | Panah / next |
+| `'star'` | ★ | Bintang / favorit |
+| `'circle'` | ● | Circle / default |
+| `'info'` | ℹ | Informasi |
+| `'warning'` | ⚠ | Peringatan |
+| `'question'` | ? | Pertanyaan |
+
+Support juga emoji langsung: `{"icon": "🔵", ...}`
+
+---
+
+## Color Theory — Auto WCAG AA Palette
+
+### `PaletteGenerator` class
+Menerima 1 warna utama (hex) → generate full 60-30-10 + 4 semantic.
+
+### Rules
+| Rule | Output | Detail |
+|------|--------|--------|
+| **Monochromatic** | NAVY, NAVY_L, ICE (60%+30%) | Same hue, varian lightness 6%–92% |
+| **Split-complementary** | GOLD accent (10%) | h + 150° dan h + 210° |
+| **Tetradic** | BLUE, TEAL, WARM, RED | 4 hues 90° apart |
+| **WCAG binary-search** | Semua teks | Adjust lightness sampai ≥4.5:1 |
+
+### Acuan
+- Rathore et al., VIS 2019 — arXiv:1908.00220
+- Li et al., 2021 — arXiv:2102.05231
+- WCAG 2.1 / sRGB ITU-R BT.709
+
+```python
+engine = Engine(primary_color="#2563EB")
+# → otomatis: TEXT_D 17.1:1, BLUE 8.0:1, TEAL 5.0:1, WARM 4.6:1, RED 4.5:1
+```
+
+Juga dari CLI: `python3 src/ppt_engine.py "#E91E63"`
+
+---
+
+## 11 Slide Archetype
 
 | Type | Fungsi | Elemen Kunci |
 |------|--------|--------------|
@@ -85,70 +170,55 @@ Content Area: cx=0.6, cy=1.15, cw=12.133, ch=5.85
 
 ---
 
-## Color Palette 60-30-10 — WCAG AA Verified ✅
+## Color Palette Default — WCAG AA Verified ✅
 
-| Peran | Warna | Hex | RGB | Kontras Putih |
-|-------|-------|-----|-----|:-------------:|
-| **60%** Dominan | Navy | `#0A1628` | `10,22,40` | 18.1:1 🏆 |
-| **30%** Sekunder | Ice/White | `#F5F7FA` / `#FFFFFF` | `245,247,250` | — |
-| **10%** Aksen | Gold | `#C8962E` | `200,150,46` | 2.7:1 (dark bg only) |
+### 60-30-10
+| Peran | Warna | Hex | Kontras Putih |
+|-------|-------|-----|:-------------:|
+| **60%** Dominan | Navy | `#0A1628` | 18.1:1 🏆 |
+| **30%** Sekunder | Off White | `#F5F7FA` | 1.1:1 |
+| **10%** Aksen | Gold | `#C8962E` | 2.7:1 (dark bg only) |
 
-### Semantic Colors (WCAG AA ≥ 4.5:1 ✅)
-| Nama | Hex | Kontras Putih | Penggunaan |
-|------|-----|:------------:|------------|
-| BLUE | `#2563EB` | 5.2:1 ✅ | Informasi, definisi |
-| TEAL | **`#0B7C72`** | **5.1:1 ✅** | **Prosedur, data** |
-| WARM | **`#A0522D`** | **5.6:1 ✅** | **Peringatan, faktor (sienna)** |
-| RED | `#DC2626` | 4.8:1 ✅ | Sanksi, bahaya |
+### Semantic (≥4.5:1 ✅)
+- BLUE `#2563EB` (5.2:1) — info
+- TEAL `#0B7C72` (5.1:1) — prosedur
+- WARM `#A0522D` (5.6:1) — peringatan
+- RED `#DC2626` (4.8:1) — bahaya
 
-> ⚡ **Perubahan penting**: TEAL digelapkan `#0D9488→#0B7C72`, WARM diganti hue `#B8860B→#A0522D` (sienna, tidak clash dengan gold). TEXT_M `#6B7288→#8899B0` (6.2:1 on navy ✅). TEXT_L `#9CA3AF→#64748B` (4.8:1 on white ✅).
+### Text
+- TEXT_D `#1A1A2E` (17.1:1 on white)
+- TEXT_M `#8899B0` (6.2:1 on navy)
+- TEXT_L `#64748B` (4.8:1 on white)
 
 ---
 
-## Cara Buat PPT Baru (Topik Lain)
+## QA Workflow
 
-1. Copy `content_perwal_51_2024.py` → `content_topik_baru.py`
-2. Ubah `PRESENTATION` dict (title, source, output)
-3. Ubah `SLIDES` list — pakai type yang sesuai dari 10 archetype di atas
-4. Jalankan: `CONTENT_MODULE=content_topik_baru python3 buat_ppt_generik.py`
+```bash
+# Text check
+python3 src/qa.py --text-only output.pptx
 
-### Content Dict Structure
-```python
-PRESENTATION = {
-    "title": "Judul Presentasi",
-    "source": "Sumber: ...",
-    "output": "output.pptx",
-}
+# Render to images (butuh LibreOffice + poppler-utils)
+python3 src/qa.py --render-only output.pptx --dpi 150
 
-SLIDES = [
-    {"type": "cover", "data": {
-        "pre_title": "...", "city": "...",
-        "main_title": "...", "display_title": "...",
-        "badge_text": "...",
-    }},
-    {"type": "card_grid", "data": {
-        "title": "Action Title",
-        "subtitle": "...",
-        "cards": [
-            {"icon": "📊", "title": "Judul Card",
-             "color": "#2563EB", "items": ["item1", "item2"]},
-        ],
-    }},
-    # ... slide lainnya
-]
+# Full with subagent inspect prompt
+python3 src/qa.py --inspect output.pptx
 ```
 
+### Verification Loop (WAJIB)
+1. Generate → Render → Subagent inspect
+2. Fix issues → Re-verify
+3. Ulang sampai no new issues
+
+Subagent dipanggil via tool `task()` atau `agentic_delegate()`.
+
 ---
 
-## Perwal Bekasi No 51/2024 — Content Spesifik
+## Template Editing
 
-- **33 slide**: Cover + TOC + 11 Bab + Closing
-- **Rumus**: `Pajak Reklame = Tarif (50%) × NSR`
-- **NSR** = Nilai Kelas Jalan × Ukuran (m²) × Jumlah × Jangka Waktu
-- **Ketentuan Khusus**:
-  - Reklame indoor: NSR 50%
-  - Ketinggian > 15m: tambahan 20%
-  - Produk tembakau & miras: tambahan 50%
-- **Kelas Jalan**: Khusus (Tol, Premium 1, Premium 2), I (Kendali Ketat), II (Kendali Sedang)
-- **10 jenis reklame**: Papan, Videotron, Kain, Stiker, Selebaran, Berjalan, Udara, Apung, Film/Slide, Peragaan
-- **8 pengecualian**: Internet/TV/radio, label produk, nama usaha ≤1m², pemerintah, ibadah, sosial, politik, olahraga KONI
+```bash
+python3 src/pptx_tools.py unpack template.pptx unpacked/
+python3 src/pptx_tools.py list template.pptx
+# edit XML di unpacked/ppt/slides/slide*.xml
+python3 src/pptx_tools.py pack unpacked/ output.pptx
+```
