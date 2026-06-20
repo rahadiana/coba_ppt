@@ -504,17 +504,45 @@ Hanya jika konten akan dipakai berulang:
 CONTENT_MODULE=content_xxx python3 src/buat_ppt_generik.py
 ```
 
+### Opsi 4 — Pendekatan Procedural (tiru `src/create_ppt.py`)
+Untuk PPT dengan desain kustom yang tidak cocok dengan archetype engine, tiru pola `create_ppt.py`:
+```python
+# _gen_kustom.py — buat PPT dengan python-pptx langsung
+from pptx import Presentation
+from pptx.util import Inches, Pt
+# ... import & helpers ...
+prs = Presentation()
+prs.slide_width = Inches(13.333)
+prs.slide_height = Inches(7.5)
+# ... bangun slide by slide ...
+prs.save('output.pptx')
+```
+
 ---
 
-## ✅ Referensi File
+## ✅ Referensi File — Seluruh Isi `src/`
 
-| File | Fungsi | Wajib? |
-|------|--------|--------|
-| `src/ppt_engine.py` | Engine — LayoutFrame + 11 archetype builders | ✅ Ya |
-| `src/buat_ppt_generik.py` | Entry point untuk content file | 🔧 Optional |
-| `src/fix_pptx_zip.py` | Utility fix ZIP order PPTX corrupt | 🔧 Optional |
+| File | Baris | Fungsi | Wajib? |
+|------|-------|--------|--------|
+| `src/ppt_engine.py` | ~1465 | **Engine utama** — LayoutFrame + 11 archetype builders (cover, toc, section, card_grid, two_col, callout, flow, table, nsr_factors, closing) + auto-palette WCAG AA | ✅ Ya |
+| `src/create_ppt.py` | ~572 | **Generator prosedural mandiri** — Contoh pembuatan PPT dengan python-pptx langsung (tanpa engine). Cocok untuk PPT dengan desain kustom/tidak terikat archetype. Palette: dark navy + red accent (tema medis). | 🔧 Alternatif |
+| `src/buat_ppt_generik.py` | ~100 | **Entry point** untuk content file (`CONTENT_MODULE=xxx python3 src/buat_ppt_generik.py`). Memanggil engine dengan data dari file content_*.py | 🔧 Optional |
+| `src/pptx_tools.py` | ~200 | **Utility PPTX** — unpack, edit, list, pack slide XML. Untuk edit teks di PPTX existing tanpa generate ulang. | 🔧 Optional |
+| `src/qa.py` | ~300 | **Quality Assurance** — render PPTX ke PNG, ekstrak teks, inspeksi layout, deteksi overlap. | 🔧 Optional |
+| `src/fix_pptx_zip.py` | ~100 | **Fix korupsi ZIP** — urutan file dalam ZIP PPTX kadang corrupt. Utility ini memperbaikinya. | 🔧 Optional |
+| `src/__init__.py` | 0 | Marker package (kosong) | ✅ (wajib ada) |
 
-> **LLM tidak perlu** menyentuh `src/ppt_engine.py`. Cukup baca `src/agent.md` ini, extract konten dari sumber, lalu panggil engine langsung.
+### Panduan Memilih Tool
+
+| Kondisi | Gunakan |
+|---------|---------|
+| Presentasi standar (regulasi, laporan, proposal) → pakai archetype | **`ppt_engine.py`** — panggil `Engine().build(SLIDES)` |
+| Desain kustom/tidak cocok archetype → buat manual | **`create_ppt.py`** — tiru pola procedural-nya |
+| Edit isi PPTX yang sudah ada | **`pptx_tools.py unpack`** → edit XML → **`pack`** |
+| Inspeksi/QA hasil generate | **`qa.py --text-only`** atau **`qa.py --render-only`** |
+| PPTX corrupt/tidak bisa dibuka | **`fix_pptx_zip.py`** |
+
+> **LLM**: Untuk presentasi standar, cukup baca `agent.md`, extract konten dari sumber, lalu panggil `Engine().build(SLIDES)`. Untuk desain kustom, tiru pola dari `create_ppt.py`.
 
 ---
 

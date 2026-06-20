@@ -17,9 +17,17 @@ CARA PAKAI:
     "
 
 STRUKTUR FILE:
-    src/ppt_engine.py           ← ENGINE REUSABLE
-    src/buat_ppt_generik.py     ← ENTRY POINT (file ini)
+    src/ppt_engine.py           ← ENGINE REUSABLE (archetype-based)
+    src/create_ppt.py           ← ALTERNATIF: generator procedural langsung python-pptx
+    src/buat_ppt_generik.py     ← ENTRY POINT untuk content module (file ini)
+    src/pptx_tools.py           ← UTILITY: unpack/edit/pack PPTX
+    src/qa.py                   ← QUALITY ASSURANCE: render/extract/inspeksi
+    src/fix_pptx_zip.py         ← UTILITY: fix korupsi ZIP PPTX
     *_tmp.py                    ← CONTENT MODULE (di-ignore git via .gitignore)
+
+PILIHAN PENDEKATAN:
+    • Engine archetype → cocok untuk PPT standar (regulasi, laporan, proposal)
+    • Procedural langsung (tiru create_ppt.py) → untuk desain kustom/tidak terikat template
 
 NAMA FILE:
     Content module harus pakai suffix *_tmp.py biar tidak ikut ter-track git.
