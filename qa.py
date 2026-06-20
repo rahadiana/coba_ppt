@@ -124,7 +124,7 @@ def render_to_images(pptx_path, output_dir=None, dpi=150):
 # INSPECT PROMPT — untuk subagent
 # ═══════════════════════════════════════════════════════════
 
-INSPECT_PROMPT_TEMPLATE = """Visually inspect these slides. Assume there are issues — find them.
+INSPECT_PROMPT = """Visually inspect these slides. Assume there are issues — find them.
 
 Look for:
 - Overlapping elements (text through shapes, lines through words, stacked elements)
@@ -142,18 +142,58 @@ Look for:
 
 For each slide, list issues or areas of concern, even if minor.
 
-Read and analyze these images:
 {image_list}
 
 Report ALL issues found, including minor ones. Format as a markdown list per slide."""
 
 
-def build_inspect_prompt(slide_images):
-    """Build the subagent inspection prompt."""
-    lines = []
+# ═══════════════════════════════════════════════════════════
+# SUBAGENT INVOCATION — untuk agent system
+# ═══════════════════════════════════════════════════════════
+
+TASK_CALL_TEMPLATE = """
+Cara panggil subagent untuk inspeksi:
+
+task(
+  description="Inspect PPTX slide images",
+  prompt=\"\"\"{prompt}
+Read and analyze these images:
+{image_list}
+\"\"\",
+  subagent_type="general"
+)
+
+Atau via delegate:
+agentic_delegate(
+  taskId="qa-pptx-001",
+  description="Inspect slide images for visual issues",
+  role="qa"
+)
+"""
+
+
+def build_inspect_prompt(slide_images, include_task_call=True):
+    """
+    Build subagent inspection prompt.
+    
+    Args:
+        slide_images: list of (slide_num, path) tuples
+        include_task_call: if True, include the task() call template
+    
+    Returns:
+        Full prompt string ready for task() or agentic_delegate()
+    """
+    img_lines = []
     for num, path in slide_images:
-        lines.append(f"{num}. {path}")
-    return INSPECT_PROMPT_TEMPLATE.format(image_list='\n'.join(lines))
+        img_lines.append(f"{num}. {path}  (Expected: slide {num})")
+    
+    image_list = '\n'.join(img_lines)
+    
+    if include_task_call:
+        prompt = INSPECT_PROMPT.format(image_list="Read and analyze these images:\n" + image_list)
+        return TASK_CALL_TEMPLATE.format(prompt=prompt, image_list=image_list)
+    else:
+        return INSPECT_PROMPT.format(image_list="Read and analyze these images:\n" + image_list)
 
 
 # ═══════════════════════════════════════════════════════════

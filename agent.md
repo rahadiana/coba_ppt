@@ -1163,20 +1163,45 @@ python3 qa.py --text-only output.pptx
 # 3. Render ke images
 python3 qa.py --render-only output.pptx --dpi 150
 
-# 4. Subagent inspect
+# 4. Subagent inspect — via task() tool
 python3 qa.py --inspect output.pptx
-# → Muncul prompt yang bisa dikirim ke subagent visual
+# → Output siap di-copy ke tool task()
+```
+
+### Cara Panggil Subagent (System Kita)
+
+Gunakan tool **`task`** atau **`agentic_delegate`**:
+
+```python
+# Opsi 1: task() — untuk inspeksi gambar
+task(
+  description="Inspect PPTX slide images",
+  prompt="""Visually inspect these slides...
+Read and analyze these images:
+1. /tmp/qa_output/slide-01.jpg
+2. /tmp/qa_output/slide-02.jpg
+...""",
+  subagent_type="general"
+)
+
+# Opsi 2: agentic_delegate — untuk QA khusus
+agentic_delegate(
+  taskId="qa-pptx-001",
+  description="Inspect slide images for visual issues",
+  role="qa"
+)
 ```
 
 ### Verification Loop (Wajib!)
 
 1. Generate slides → Extract text → Render images
-2. **Cari masalah** (overlap, overflow, contrast, gaps)
-3. Fix masalah
-4. **Re-verify** slide yang berubah
-5. Ulang sampai tidak ada issue baru
+2. **Panggil subagent** via `task()` untuk inspeksi visual
+3. Subagent laporin **semua masalah** (overlap, overflow, contrast, gaps)
+4. Fix masalah
+5. **Re-verify** slide yang berubah (render ulang → subagent lagi)
+6. Ulang sampai subagent nemuin **no new issues**
 
-> ⚠️ **Gunakan subagent untuk inspeksi visual** — matamu sudah capek lihat kode dan akan melihat apa yang kamu harapkan, bukan apa yang sebenarnya ada.
+> ⚠️ **WAJIB pakai subagent untuk visual QA** — matamu sudah capek lihat kode dan akan melihat apa yang kamu harapkan, bukan apa yang sebenarnya ada. Subagent punya *fresh eyes*.
 
 ---
 
