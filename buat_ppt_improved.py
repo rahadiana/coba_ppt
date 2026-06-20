@@ -296,9 +296,15 @@ def card_grid(action_title, cards, subtitle=None, ref=None, cols=0):
     per_row = cols if cols > 0 else (2 if n <= 2 else (3 if n <= 3 else 4))
     gap = Inches(0.3)
     cw = (SLIDE_W - M * 2 - (per_row - 1) * gap) / per_row
-    gap_h = Inches(0.25)
+    gap_h = Inches(0.3)
     n_rows = (n + per_row - 1) // per_row
-    ch = (SLIDE_H - Inches(1.15) - Inches(0.6) - (n_rows - 1) * gap_h) / n_rows
+    content_h = SLIDE_H - Inches(1.15) - Inches(0.5)  # ~5.85"
+    ch = (content_h - (n_rows - 1) * gap_h) / n_rows
+
+    # Calculate item height based on max items per card
+    max_items = max(len(cd.get('items', [])) for cd in cards)
+    item_h = Inches(0.35)  # enough for 2 lines of wrapped text
+    title_h = Inches(0.3)
 
     for i, cd in enumerate(cards):
         row = i // per_row
@@ -323,14 +329,14 @@ def card_grid(action_title, cards, subtitle=None, ref=None, cols=0):
         else:
             ty = cy + Inches(0.15)
         # Card title
-        add_box(s, cx + Inches(0.15), ty, cw - Inches(0.3), Inches(0.3),
+        add_box(s, cx + Inches(0.15), ty, cw - Inches(0.3), title_h,
                 t, 13, bold=True, color=clr)
-        # Items
-        ay = ty + Inches(0.35)
+        # Items with enough height for text wrapping
+        ay = ty + title_h + Inches(0.08)
         for item in items:
-            add_box(s, cx + Inches(0.15), ay, cw - Inches(0.3), Inches(0.22),
+            add_box(s, cx + Inches(0.15), ay, cw - Inches(0.3), item_h,
                     f"• {item}", 9, color=TEXT_D)
-            ay += Inches(0.22)
+            ay += item_h + Inches(0.02)
 
     add_footer(s)
     return s
