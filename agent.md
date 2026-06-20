@@ -656,7 +656,251 @@ colors = [
 | Source footer | Calibri | 7pt | Regular | TEXT_L |
 | Page number | Calibri | 8pt | Regular | TEXT_L |
 
-### 9. Contoh: Cover Visual Layout
+### 9. Logo / Icon Placement Mathematics
+
+Semua logo/icon di PPT ini adalah **emoji dalam lingkaran warna** (bukan file gambar). Berikut matematika posisi untuk tiap jenis icon:
+
+#### a) Card Icon — Paling Sering Dipakai
+
+```
+Card Grid (setiap card):
+┌──────────────────────────┐
+│ ┃  ◌  (0.42")            │ ← icon di (cx+0.15, cy+0.15)
+│ ┃                        │
+│ ┃  Judul Card            │ ← title_y = cy + 0.15 + 0.42 + 0.13
+│ ┃  • Item                │
+│ ┃                        │
+│ 0.05" accent bar         │ ← di (cx, cy) tinggi penuh = row_h
+└──────────────────────────┘
+
+Rumus:
+  icon_x      = cx + CARD_PAD          = cx + 0.15"
+  icon_y      = cy + CARD_PAD          = cy + 0.15"
+  icon_size   = 0.42"                  ← diameter lingkaran
+  icon_center = icon_x + icon_size/2   ← untuk text alignment CENTER
+  
+  title_x     = cx + CARD_PAD          = cx + 0.15"
+  title_y     = icon_y + icon_size + 0.13"  = cy + 0.70"
+  title_width = col_w - CARD_PAD×2     = col_w - 0.30"
+```
+
+**Contoh 4 kolom:**
+```
+col_w = (12.133 - 3×0.3) / 4 = 2.808"
+Card 1: icon di (0.6+0.15, cy+0.15) = (0.75, cy+0.15)
+Card 2: icon di (0.6+2.808+0.3+0.15, cy+0.15) = (3.858, cy+0.15)
+Card 3: icon di (0.6+2×(2.808+0.3)+0.15, cy+0.15) = (6.966, cy+0.15)
+Card 4: icon di (0.6+3×(2.808+0.3)+0.15, cy+0.15) = (10.074, cy+0.15)
+```
+
+#### b) TOC Badge
+
+```
+┌────────────────────┐
+│ ┌────┐             │
+│ │  1 │  Bab I      │ ← badge di (x+0.10, y+0.06), 0.5×0.5"
+│ └────┘             │
+│                    │
+└────────────────────┘
+
+Rumus:
+  badge_x      = x + 0.10"            ← 0.1" dari kiri card
+  badge_y      = y + 0.06"            ← 0.06" dari atas card
+  badge_size   = 0.5"                 ← square rounded rectangle
+  badge_color  = item["color"]
+  text_inside  = nomor, 14pt bold white, CENTER
+  
+  label_x      = x + 0.75"            ← setelah badge + gap
+  label_width  = cw_col - 0.9"        ← sisa width card
+```
+
+#### c) Flow Step Circle
+
+```
+┌──────────────────────┐
+│══════ (accent bar)   │ ← y=sy=1.30"
+│                      │
+│       ◌ (0.5")       │ ← centered: cx+bw/2-0.25, y=1.45"
+│       SKPD           │
+│  Diterbitkan         │
+│  Bapenda             │
+└──────────────────────┘
+
+Rumus:
+  circle_x     = cx + bw/2 - 0.25"    ← 0.25 = circle_size/2
+  circle_y     = sy + 0.15"           ← 0.15" di bawah accent bar
+  circle_size  = 0.5"                 ← diameter
+  circle_color = step["color"]
+  text_inside  = step num, 18pt bold white, CENTER
+
+  ⚡ CIRCLED TEXT: supaya teks center di dalam lingkaran, 
+     textbox posisi dan ukuran SAMA dengan circle, align=CENTER
+     Jadi teks otomatis di tengah lingkaran.
+     
+  Arrow "›" antar step:
+  arrow_x      = cx + bw              ← persis di kanan card
+  arrow_y      = sy + 0.7"            ← vertikal tengah circle area
+  arrow_w      = bgap = 0.3"          ← selebar gap
+  font_size    = 24pt GOLD
+  align        = CENTER               ← center di tengah gap
+```
+
+#### d) NSR Factor Circle
+
+```
+┌──────────────────┐
+│ ◌ (0.55")  label │ ← circle di (x+0.15, y+0.25)
+│                  │
+└──────────────────┘
+
+Rumus:
+  circle_x     = x + 0.15"            ← 0.15" dari kiri card
+  circle_y     = y + 0.25"            ← 0.25" dari atas card
+  circle_size  = 0.55"                ← diameter (terbesar!)
+  circle_color = factor["color"]
+  text_inside  = factor num, 18pt bold white, CENTER
+  
+  label_x      = x + 0.80"            ← setelah circle + gap
+  label_y      = y + 0.20"
+  label_width  = fw - 1.0"            ← sisa width card
+  label_height = 0.9"                 ← tengah vertikal
+  vAlign       = MIDDLE
+```
+
+#### e) Header Gold Accent Bar
+
+```
+┌──────────────────────────────────┐
+│══════ gold_bar 0.035" (y=0)     │
+│                                  │
+│ ████████████████████████████████ │ ← navy header 0.9" (y=0.035)
+│ ██│                             │
+│ ██│  Judul 20pt white           │
+│ ██│  Subtitle 9pt TEXT_L        │
+│ ██│                             │
+│ ██│  GOLD BAR VERTIKAL          │
+│ ██│  x=0.6, y=0.12              │
+│ ██│  width=0.07, height=0.55    │
+│ ██│                             │
+│                                  │
+│       gap 0.21"                  │
+├──────────────────────────────────┤
+
+Rumus:
+  gold_bar_x      = 0.6"            (= MARGIN_H)
+  gold_bar_y      = 0.12"           (header atas + padding)
+  gold_bar_w      = 0.07"           (tipis vertikal)
+  gold_bar_h      = 0.55"           (tinggi — tengah header)
+```
+
+#### f) Left Accent Bar pada Card (card_grid & two_col)
+
+```
+┌──────────────────────┐
+│ ██                   │
+│ ██  Card content     │ ← accent bar di (cx, cy)
+│ ██                   │    width=0.05", height=ch/row_h
+│ ██                   │    color = card["color"]
+│ ██                   │
+└──────────────────────┘
+
+Rumus:
+  bar_x  = cx              ← persis di border kiri card
+  bar_y  = cy              ← persis di border atas card
+  bar_w  = 0.05"           ← tipis
+  bar_h  = row_h (card_grid)  atau ch (two_col)
+  color  = card/column color
+```
+
+#### g) Top Accent Bar (callout & flow)
+
+```
+┌──────────────────────┐
+│══════════════════════│ ← bar di (cx, sy), width=cw/bw, height=0.05"
+│                      │
+│  Callout/Flow card   │
+│                      │
+└──────────────────────┘
+```
+
+#### h) Footer Elements
+
+```
+┌─────────────────────────────────────┐
+│══════ navy bar 0.03" (y=7.0)       │
+│                                     │
+│ Sumber: ...              [page #]   │
+│ x=0.6"                   x=12.333"  │
+│ width=4"                 width=0.8" │
+│ font=7pt TEXT_L          font=8pt   │
+│                                     │
+└─────────────────────────────────────┘
+  y = 7.06" (7.0 + 0.06)
+```
+
+#### i) Decorative Ovals (Cover / Section / Closing)
+
+Oval dekoratif = **hiasan latar belakang** di slide gelap. Posisinya **sengaja sebagian di luar slide** untuk efek lembut.
+
+| Slide | Oval | x | y | Size | Warna | Efek Posisi |
+|-------|------|---|---|------|-------|-------------|
+| Cover | 1 | -1.0 | -1.5 | 4.5 | NAVY_D | pojok kiri atas (66% visible) |
+| Cover | 2 | 8.5 | -2.0 | 7.0 | NAVY_D | pojok kanan atas (71% visible) |
+| Cover | 3 | 10.0 | 4.5 | 5.0 | NAVY_D | pojok kanan bawah (40% visible) |
+| Cover | 4 | 0.5 | 5.5 | 2.5 | NAVY_L | pojok kiri bawah, lebih terang |
+| Section | 1 | -1.5 | -1.5 | 5.0 | NAVY_L | kiri atas (lebih terang) |
+| Section | 2 | -0.5 | -0.5 | 3.5 | NAVY_D | kiri atas nested |
+| Section | 3 | 9.5 | 4.0 | 5.0 | NAVY_D | kanan bawah |
+| Section | 4 | 10.5 | 3.0 | 3.0 | NAVY_L | kanan tengah (kecil) |
+| Closing | 1 | -1.0 | -1.5 | 4.5 | NAVY_D | = cover oval 1 |
+| Closing | 2 | 8.5 | -2.0 | 7.0 | NAVY_D | = cover oval 2 |
+| Closing | 3 | 10.0 | 4.5 | 5.0 | NAVY_D | = cover oval 3 |
+
+**Pattern Matematika Oval:**
+```
+Bagian oval yang terlihat dalam slide:
+  visible_x_start = max(0, x)
+  visible_y_start = max(0, y)
+  visible_x_end   = min(SLIDE_W, x + size)
+  visible_y_end   = min(SLIDE_H, y + size)
+  
+Cover Oval 1: terlihat dari (0,0) sampai (3.5, 3.0) = 66% area
+Cover Oval 2: terlihat dari (8.5, 0) sampai (13.333, 5.0) = 71% area
+Cover Oval 3: terlihat dari (10.0, 4.5) sampai (13.333, 7.5) = 40% area
+```
+
+#### j) Ringkasan Semua Ukuran Icon/Logo
+
+| Jenis Icon | Bentuk | Ukuran | Posisi X | Posisi Y | Warna |
+|------------|--------|--------|----------|----------|-------|
+| **Card icon** | Lingkaran | 0.42" | `cx + 0.15"` | `cy + 0.15"` | Card color |
+| **Flow circle** | Lingkaran | 0.50" | `cx + bw/2 - 0.25"` | `sy + 0.15"` | Step color |
+| **NSR circle** | Lingkaran | 0.55" | `x + 0.15"` | `y + 0.25"` | Factor color |
+| **TOC badge** | Rounded rect | 0.50" | `x + 0.10"` | `y + 0.06"` | Item color |
+| **Header accent** | Rectangle | 0.07×0.55" | `0.60"` | `0.12"` | GOLD |
+| **Card accent bar** | Rectangle | 0.05×row_h | `cx` | `cy` | Card color |
+| **Top accent bar** | Rectangle | cw×0.05 | `cx` | `sy` | Step color |
+| **Gold separator** | Rectangle | 2.5-4×0.04" | `MARGIN_H` | varies | GOLD |
+| **Bottom bar** | Rectangle | full×0.22" | `0` | `7.28"` | GOLD |
+| **Gold top bar** | Rectangle | full×0.035" | `0` | `0` | GOLD |
+| **Navy footer bar** | Rectangle | full×0.03" | `0` | `7.00"` | NAVY |
+
+#### k) Aturan Emoji dalam Lingkaran
+
+```
+Emoji di dalam lingkaran:
+  • Posisi textbox = PERSIS sama dengan posisi lingkaran
+  • Ukuran textbox = PERSIS sama dengan diameter lingkaran
+  • Alignment = CENTER (horizontal & vertical)
+  • Font size = 13pt (card icon), 18pt (flow/NSR circle)
+  • Warna font = WHITE
+
+  ⚡ RAHASIA: karena emoji tidak selalu ter-center sempurna,
+     textbox yang sama persis dengan lingkaran memastikan 
+     emoji muncul di tengah lingkaran.
+```
+
+### 10. Contoh: Cover Visual Layout
 
 ```
 ┌────────────────────────────────────────┐
