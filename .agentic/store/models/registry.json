@@ -1,0 +1,58 @@
+{
+  "key": "registry",
+  "data": {
+    "gpt-4o": {
+      "model": "gpt-4o",
+      "totalCalls": 0,
+      "successCalls": 0,
+      "failedCalls": 0,
+      "hallucinationCount": 0,
+      "avgLatencyMs": 0,
+      "lastUsed": 0,
+      "consecutiveFailures": 0,
+      "consecutiveSuccesses": 0,
+      "quarantineUntil": 0,
+      "byTaskType": {}
+    },
+    "gpt-4o-mini": {
+      "model": "gpt-4o-mini",
+      "totalCalls": 0,
+      "successCalls": 0,
+      "failedCalls": 0,
+      "hallucinationCount": 0,
+      "avgLatencyMs": 0,
+      "lastUsed": 0,
+      "consecutiveFailures": 0,
+      "consecutiveSuccesses": 0,
+      "quarantineUntil": 0,
+      "byTaskType": {}
+    },
+    "claude-3-opus": {
+      "model": "claude-3-opus",
+      "totalCalls": 0,
+      "successCalls": 0,
+      "failedCalls": 0,
+      "hallucinationCount": 0,
+      "avgLatencyMs": 0,
+      "lastUsed": 0,
+      "consecutiveFailures": 0,
+      "consecutiveSuccesses": 0,
+      "quarantineUntil": 0,
+      "byTaskType": {}
+    },
+    "claude-3-sonnet": {
+      "model": "claude-3-sonnet",
+      "totalCalls": 0,
+      "successCalls": 0,
+      "failedCalls": 0,
+      "hallucinationCount": 0,
+      "avgLatencyMs": 0,
+      "lastUsed": 0,
+      "consecutiveFailures": 0,
+      "consecutiveSuccesses": 0,
+      "quarantineUntil": 0,
+      "byTaskType": {}
+    }
+  },
+  "updatedAt": "2026-06-20T13:32:28.788Z"
+}
