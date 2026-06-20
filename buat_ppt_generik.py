@@ -2,46 +2,61 @@
 """
 buat_ppt_generik.py — GENERIC PPT GENERATOR
 ============================================
-Entry point untuk generate PPT dari content terpisah.
-Engine dan content dipisah — ganti konten tanpa edit engine.
+Entry point untuk generate PPT dari content module.
+LLM bisa generate langsung via python3 -c tanpa file ini.
 
 CARA PAKAI:
-    # Pakai content default (content_perwal_51_2024.py):
-    python3 buat_ppt_generik.py
+    # Via content module (jika sudah punya file content):
+    CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py
 
-    # Pakai content kustom:
-    CONTENT_MODULE=content_kustom python3 buat_ppt_generik.py
-
-    # Atau dari script lain:
+    # Langsung dari CLI (LLM workflow — tanpa file content):
+    python3 -c "
     from ppt_engine import Engine
-    from content_perwal_51_2024 import PRESENTATION, SLIDES
-    engine = Engine()
-    engine.build(SLIDES, source_text=PRESENTATION['source'],
-                 output_path=PRESENTATION['output'])
+    SLIDES = [{'type':'cover','data':{...}}]
+    Engine().build(SLIDES, source_text='Sumber: ...', output_path='output.pptx')
+    "
 
 STRUKTUR FILE:
-    ppt_engine.py               ← REUSABLE (tidak perlu diubah)
-    content_perwal_51_2024.py   ← CONTENT (ganti untuk PPT lain)
+    ppt_engine.py               ← ENGINE REUSABLE
     buat_ppt_generik.py         ← ENTRY POINT (file ini)
+    agent.md                    ← PANDUAN LLM
 """
 
 import os, sys, importlib
 
 
 def main():
-    # Tentukan module content
-    content_module_name = os.environ.get("CONTENT_MODULE", "content_perwal_51_2024")
+    content_module_name = os.environ.get("CONTENT_MODULE")
+    
+    if not content_module_name:
+        print("=" * 60)
+        print("📋 PPT GENERATOR — Panduan Cepat")
+        print("=" * 60)
+        print()
+        print("Content module tidak ditentukan.")
+        print()
+        print("🔥 LLM Workflow — langsung dari CLI:")
+        print()
+        print("  python3 -c \"from ppt_engine import Engine;\"")
+        print("  python3 -c \"Engine().build(SLIDES, ...)\"")
+        print()
+        print("📦 Content module — jika sudah punya file:")
+        print()
+        print("  CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py")
+        print()
+        print("📖 Baca panduan lengkap: cat agent.md")
+        print("=" * 60)
+        sys.exit(0)
     
     try:
         content = importlib.import_module(content_module_name)
     except ImportError:
         print(f"❌ Content module '{content_module_name}' tidak ditemukan.")
-        print("   Buat file content atau set CONTENT_MODULE=namafile_tanpa_.py")
+        print(f"   Pastikan file content_{content_module_name}.py ada.")
         sys.exit(1)
     
     from ppt_engine import Engine
     
-    # Validasi content
     pres = getattr(content, "PRESENTATION", {})
     slides = getattr(content, "SLIDES", [])
     
@@ -59,14 +74,12 @@ def main():
     print(f"📁 Output: {output}")
     print()
     
-    # Build
     engine = Engine()
     prs = engine.build(slides, source_text=source, output_path=output)
     
     print(f"✅ BERHASIL: {output}")
     print(f"   {len(prs.slides)} slide, {os.path.getsize(output):,} bytes")
     
-    # Ringkasan slide
     types = {}
     for s in slides:
         t = s.get("type", "?")
