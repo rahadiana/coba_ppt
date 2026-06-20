@@ -265,28 +265,58 @@ Khusus untuk faktor-faktor bernomor + kotak catatan di bawah.
 
 ---
 
-## 🎨 Color System (60-30-10 Rule)
+## 🎨 Color System (60-30-10 Rule) — WCAG AA Verified ✅
 
-| Nama | Hex | Peran | Penggunaan |
-|------|-----|-------|------------|
-| Navy | `#0A1628` | **60%** dominan | Background, header, section divider |
-| Ice | `#F5F7FA` | **30%** sekunder | Background content slide |
-| White | `#FFFFFF` | **30%** sekunder | Card background, teks header |
-| Gold | `#C8962E` | **10%** aksen | Bar, highlight, arrow |
-| Blue | `#2563EB` | semantic | Info, definisi, card 1 |
-| Teal | `#0D9488` | semantic | Prosedur, data, card 2 |
-| Warm | `#B8860B` | semantic | Peringatan, faktor, card 3 |
-| Red | `#DC2626` | semantic | Sanksi, bahaya, card 4 |
+Semua warna sudah diuji kontras dengan formula WCAG 2.1 — **no color bias**.
 
-> **Pakai di content**: `"#2563EB"` atau `"BLUE"` (case insensitive)
+### Palette Inti
+
+| Nama | Hex | Peran | Kontras Putih | Kontras Navy | Penggunaan |
+|------|-----|-------|--------------|--------------|------------|
+| Navy | `#0A1628` | **60%** dominan | 18.1:1 🏆 | — | Background, header, section divider |
+| Off White | `#F5F7FA` | **30%** sekunder | 1.1:1 | 16.9:1 🏆 | Background content slide |
+| White | `#FFFFFF` | card bg | — | 18.1:1 🏆 | Card background, teks header |
+| Gold | `#C8962E` | **10%** aksen | 2.7:1 | 6.8:1 ✅ | Bar, highlight, arrow (hanya di dark bg) |
+
+### Semantic Colors
+
+| Nama | Hex | Kontras Putih | WCAG | Penggunaan |
+|------|-----|:------------:|:----:|------------|
+| Blue | `#2563EB` | 5.2:1 | ✅ AA | Info, definisi, card 1 |
+| **Teal** | **`#0B7C72`** | **5.1:1** | **✅ AA** | **Prosedur, data, card 2** |
+| **Warm** | **`#A0522D`** | **5.6:1** | **✅ AA** | **Peringatan, faktor, card 3** |
+| Red | `#DC2626` | 4.8:1 | ✅ AA | Sanksi, bahaya, card 4 |
+
+### Text Colors
+
+| Nama | Hex | Kontras Putih | Kontras Navy | Untuk |
+|------|-----|:------------:|:------------:|-------|
+| TEXT_D | `#1A1A2E` | 17.1:1 🏆 | — | Body text di light bg |
+| **TEXT_M** | **`#8899B0`** | 2.9:1 | **6.2:1 ✅** | **Subtitle di navy header** |
+| **TEXT_L** | **`#64748B`** | **4.8:1 ✅** | 3.8:1 | **Footer source (7pt)** |
+
+> ⚡ **Perubahan dari palette sebelumnya** (hasil analisis WCAG):
+> - `TEAL` #0D9488 → **#0B7C72** (digelapkan: 3.7→5.1:1 on white ✅)
+> - `WARM` #B8860B → **#A0522D** (ganti hue ke sienna ~20°, tidak clash dengan gold 41°)
+> - `TEXT_M` #6B7288 → **#8899B0** (dicerahkan: 3.8→6.2:1 on navy ✅)
+> - `TEXT_L` #9CA3AF → **#64748B** (digelapkan: 2.5→4.8:1 on white ✅)
 
 ### Rotasi Warna untuk Card
 ```python
-# Untuk card_grid dengan banyak card, rotasi warna:
-colors = ["#2563EB", "#0D9488", "#B8860B", "#1B3A6B"]
+# Rotasi 4 warna — semua ≥ 4.5:1 on white ✅
+colors = ["#2563EB", "#0B7C72", "#A0522D", "#1B3A6B"]
 for i, card in enumerate(cards):
     card["color"] = colors[i % len(colors)]
 ```
+
+### Aturan Pakai Warna (anti bias)
+
+| Background | Teks Aman | Teks Hindari |
+|------------|-----------|-------------|
+| Navy `#0A1628` | White, Gold, TEXT_M, TEAL, WARM | TEXT_D, BLUE, TEXT_L |
+| White `#FFFFFF` | TEXT_D, BLUE, TEAL, WARM, RED | Gold, TEXT_M, TEXT_L |
+| Off White `#F5F7FA` | TEXT_D, BLUE, TEAL, WARM, RED | Gold, TEXT_M, TEXT_L |
+| ICE `#E8EDF5` | TEXT_D, BLUE, WARM | Gold, TEAL, TEXT_M |
 
 ---
 
@@ -632,10 +662,10 @@ title_y = icon_y + icon_size + 0.13"  # title di bawah icon
 Saat punya banyak card, rotasi warna otomatis:
 ```python
 colors = [
-    "#2563EB",  # Blue  — definisi, info
-    "#0D9488",  # Teal  — prosedur, data
-    "#B8860B",  # Warm  — peringatan, faktor
-    "#1B3A6B",  # Navy_M — pendukung
+    "#2563EB",  # Blue  — definisi, info (5.2:1 ✅)
+    "#0B7C72",  # Teal  — prosedur, data (5.1:1 ✅)
+    "#A0522D",  # Warm  — sienna, peringatan (5.6:1 ✅)
+    "#1B3A6B",  # Navy_M — pendukung (11.3:1 🏆)
 ]
 # Untuk 7 card: Blue, Teal, Warm, Navy_M, Blue, Teal, Warm
 ```

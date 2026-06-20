@@ -30,28 +30,39 @@ import math, os
 # ═══════════════════════════════════════════════════════════
 
 class Colors:
-    """Palette 60-30-10 default. Bisa di- extend atau override."""
-    # 60% Dominant
-    NAVY   = RGBColor(0x0A, 0x16, 0x28)
-    NAVY_L = RGBColor(0x12, 0x29, 0x4A)
-    NAVY_M = RGBColor(0x1B, 0x3A, 0x6B)
-    NAVY_D = RGBColor(0x0D, 0x1F, 0x3C)
-    # 30% Secondary
-    WHITE  = RGBColor(0xFF, 0xFF, 0xFF)
-    OFF_W  = RGBColor(0xF5, 0xF7, 0xFA)
-    ICE    = RGBColor(0xE8, 0xED, 0xF5)
-    ICE_D  = RGBColor(0xD0, 0xD8, 0xE8)
-    # 10% Accent
-    GOLD   = RGBColor(0xC8, 0x96, 0x2E)
-    GOLD_L = RGBColor(0xD4, 0xA0, 0x17)
-    # Semantic
-    TEXT_D = RGBColor(0x1A, 0x1A, 0x2E)
-    TEXT_M = RGBColor(0x6B, 0x72, 0x88)
-    TEXT_L = RGBColor(0x9C, 0xA3, 0xAF)
-    BLUE   = RGBColor(0x25, 0x63, 0xEB)
-    TEAL   = RGBColor(0x0D, 0x94, 0x88)
-    WARM   = RGBColor(0xB8, 0x86, 0x0B)
-    RED    = RGBColor(0xDC, 0x26, 0x26)
+    """
+    Palette 60-30-10 — WCAG AA verified (no color bias).
+    
+    ⚡ PERUBAHAN dari palette sebelumnya:
+      TEAL   #0D9488 → #0B7C72  (digelapkan: 3.7→5.1:1 on white ✅)
+      WARM   #B8860B → #A0522D  (ganti hue: gold clash → sienna ~20°)
+      TEXT_M #6B7288 → #8899B0  (dicerahkan: 3.8→6.2:1 on navy ✅)
+      TEXT_L #9CA3AF → #64748B  (digelapkan: 2.5→4.8:1 on white ✅)
+    """
+    # ── 60% Dominant ──
+    NAVY   = RGBColor(0x0A, 0x16, 0x28)  # bg header, cover, section
+    NAVY_L = RGBColor(0x12, 0x29, 0x4A)  # decorative oval (lighter)
+    NAVY_M = RGBColor(0x1B, 0x3A, 0x6B)  # medium navy
+    NAVY_D = RGBColor(0x0D, 0x1F, 0x3C)  # decorative oval (darker)
+    
+    # ── 30% Secondary ──
+    WHITE  = RGBColor(0xFF, 0xFF, 0xFF)  # card bg, text on dark
+    OFF_W  = RGBColor(0xF5, 0xF7, 0xFA)  # content slide bg
+    ICE    = RGBColor(0xE8, 0xED, 0xF5)  # note box, table stripe
+    ICE_D  = RGBColor(0xD0, 0xD8, 0xE8)  # darker ice
+    
+    # ── 10% Accent ──
+    GOLD   = RGBColor(0xC8, 0x96, 0x2E)  # bars, highlights (6.8:1 navy ✅)
+    GOLD_L = RGBColor(0xD4, 0xA0, 0x17)  # lighter gold
+    
+    # ── Semantic (WCAG AA on white ✅) ──
+    TEXT_D = RGBColor(0x1A, 0x1A, 0x2E)  # primary text (17.1:1 🏆)
+    TEXT_M = RGBColor(0x88, 0x99, 0xB0)  # subtitle on navy (6.2:1 ✅)
+    TEXT_L = RGBColor(0x64, 0x74, 0x8B)  # footer text (4.8:1 ✅)
+    BLUE   = RGBColor(0x25, 0x63, 0xEB)  # info, definisi (5.2:1 ✅)
+    TEAL   = RGBColor(0x0B, 0x7C, 0x72)  # prosedur (5.1:1 ✅)
+    WARM   = RGBColor(0xA0, 0x52, 0x2D)  # sienna, peringatan (5.6:1 ✅)
+    RED    = RGBColor(0xDC, 0x26, 0x26)  # sanksi, bahaya (4.8:1 ✅)
 
     @staticmethod
     def from_hex(hex_str):

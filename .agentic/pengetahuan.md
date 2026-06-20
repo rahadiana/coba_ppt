@@ -85,21 +85,23 @@ Content Area: cx=0.6, cy=1.15, cw=12.133, ch=5.85
 
 ---
 
-## Color Palette 60-30-10
+## Color Palette 60-30-10 — WCAG AA Verified ✅
 
-| Peran | Warna | Hex | RGB |
-|-------|-------|-----|-----|
-| **60%** Dominan | Navy | `#0A1628` | `10,22,40` |
-| **30%** Sekunder | Ice/White | `#F5F7FA` / `#FFFFFF` | `245,247,250` |
-| **10%** Aksen | Gold | `#C8962E` | `200,150,46` |
+| Peran | Warna | Hex | RGB | Kontras Putih |
+|-------|-------|-----|-----|:-------------:|
+| **60%** Dominan | Navy | `#0A1628` | `10,22,40` | 18.1:1 🏆 |
+| **30%** Sekunder | Ice/White | `#F5F7FA` / `#FFFFFF` | `245,247,250` | — |
+| **10%** Aksen | Gold | `#C8962E` | `200,150,46` | 2.7:1 (dark bg only) |
 
-### Semantic Colors
-| Nama | Hex | Penggunaan |
-|------|-----|------------|
-| BLUE | `#2563EB` | Informasi, definisi |
-| TEAL | `#0D9488` | Prosedur, data |
-| WARM | `#B8860B` | Peringatan, faktor |
-| RED | `#DC2626` | Sanksi, bahaya |
+### Semantic Colors (WCAG AA ≥ 4.5:1 ✅)
+| Nama | Hex | Kontras Putih | Penggunaan |
+|------|-----|:------------:|------------|
+| BLUE | `#2563EB` | 5.2:1 ✅ | Informasi, definisi |
+| TEAL | **`#0B7C72`** | **5.1:1 ✅** | **Prosedur, data** |
+| WARM | **`#A0522D`** | **5.6:1 ✅** | **Peringatan, faktor (sienna)** |
+| RED | `#DC2626` | 4.8:1 ✅ | Sanksi, bahaya |
+
+> ⚡ **Perubahan penting**: TEAL digelapkan `#0D9488→#0B7C72`, WARM diganti hue `#B8860B→#A0522D` (sienna, tidak clash dengan gold). TEXT_M `#6B7288→#8899B0` (6.2:1 on navy ✅). TEXT_L `#9CA3AF→#64748B` (4.8:1 on white ✅).
 
 ---
 
