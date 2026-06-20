@@ -429,6 +429,69 @@ CONTENT_MODULE=content_xxx python3 buat_ppt_generik.py
 
 ---
 
+## 🛠️ Stack Requirements — Cek Installasi
+
+Sebelum generate, LLM harus cek apakah environment sudah siap:
+
+### Required Stack
+| Komponen | Minimal | Untuk |
+|----------|---------|-------|
+| Python | 3.8+ | Menjalankan engine |
+| `python-pptx` | 1.0.0+ | Generate PPTX |
+
+### Cek Installasi
+
+**Cek Python:**
+```bash
+python3 --version
+# Harus: Python 3.8.x atau lebih baru
+```
+
+**Cek python-pptx:**
+```bash
+python3 -c "import pptx; print(pptx.__version__)"
+# Harus: 1.0.0 atau lebih baru
+```
+
+**Cek engine:**
+```bash
+python3 -c "from ppt_engine import Engine; print('✅ Engine siap')"
+# Harus: ✅ Engine siap
+```
+
+### Install Jika Belum Ada
+
+```bash
+# Install python-pptx
+pip install python-pptx
+
+# Atau via pip3
+pip3 install python-pptx
+```
+
+### Verifikasi Lengkap (satu perintah)
+```bash
+python3 -c "
+import sys, pptx
+from ppt_engine import Engine, LayoutFrame, Colors
+print(f'✅ Python   : {sys.version}')
+print(f'✅ python-pptx: {pptx.__version__}')
+print(f'✅ Engine   : OK — {len(Engine().build.__code__.co_varnames)} params')
+L = LayoutFrame()
+print(f'✅ Layout   : cw={L.cw:.3f}, ch={L.ch:.3f}')
+print('🎯 Stack siap — bisa generate PPT')
+"
+```
+
+### Jika Gagal
+| Error | Penyebab | Solusi |
+|-------|----------|--------|
+| `ModuleNotFoundError: pptx` | python-pptx belum install | `pip install python-pptx` |
+| `ModuleNotFoundError: ppt_engine` | engine file tidak ada | Cek `ls ppt_engine.py` |
+| `SyntaxError` | Python < 3.8 | Upgrade Python |
+
+---
+
 ## ⚠️ Troubleshooting
 
 | Masalah | Penyebab | Solusi |
