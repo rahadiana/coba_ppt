@@ -1,0 +1,23 @@
+{
+  "name": "coba_ppt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "buat_ppt_v3.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rahadiana/coba_ppt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rahadiana/coba_ppt/issues"
+  },
+  "homepage": "https://github.com/rahadiana/coba_ppt#readme",
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  }
+}
