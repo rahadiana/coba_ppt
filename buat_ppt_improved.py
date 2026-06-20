@@ -289,51 +289,48 @@ def content_slide(action_title, subtitle=None, ref=None):
     navy_header_bg(s, action_title, sub_text)
     return s
 
-def card_grid(action_title, cards, subtitle=None, ref=None):
-    """Grid of cards (2-4 columns) with left accent bar, icon circle, bullet items."""
+def card_grid(action_title, cards, subtitle=None, ref=None, cols=0):
+    """Grid of cards with multi-row support. cols=0 means auto (4 cols, 2 if n<=2)."""
     s = content_slide(action_title, subtitle, ref)
     n = len(cards)
-    if n <= 2:
-        cw = Inches(5.8)
-    elif n <= 3:
-        cw = Inches(3.85)
-    else:
-        cw = Inches(2.85)
+    per_row = cols if cols > 0 else (2 if n <= 2 else (3 if n <= 3 else 4))
     gap = Inches(0.3)
-    tw = n * cw + (n - 1) * gap
-    sx = (SLIDE_W - tw) / 2
-    sy = Inches(1.15)
-    ch = SLIDE_H - sy - Inches(0.7)
+    cw = (SLIDE_W - M * 2 - (per_row - 1) * gap) / per_row
+    gap_h = Inches(0.25)
+    n_rows = (n + per_row - 1) // per_row
+    ch = (SLIDE_H - Inches(1.15) - Inches(0.6) - (n_rows - 1) * gap_h) / n_rows
 
     for i, cd in enumerate(cards):
-        cx = sx + i * (cw + gap)
+        row = i // per_row
+        col = i % per_row
+        cx = M + col * (cw + gap)
+        cy = Inches(1.15) + row * (ch + gap_h)
+
         clr = cd.get('clr', BLUE)
         ic = cd.get('ic', '')
         t = cd.get('t', '')
         items = cd.get('items', [])
 
-        add_rrect(s, cx, sy, cw, ch)
+        add_rrect(s, cx, cy, cw, ch)
         # Left accent bar
-        add_shape(s, MSO_SHAPE.RECTANGLE, cx, sy, Inches(0.05), ch, fill=clr)
+        add_shape(s, MSO_SHAPE.RECTANGLE, cx, cy, Inches(0.05), ch, fill=clr)
         # Icon circle
         if ic:
-            add_oval(s, cx + Inches(0.15), sy + Inches(0.15), Inches(0.42), clr)
-            add_box(s, cx + Inches(0.15), sy + Inches(0.15), Inches(0.42), Inches(0.42),
+            add_oval(s, cx + Inches(0.15), cy + Inches(0.15), Inches(0.42), clr)
+            add_box(s, cx + Inches(0.15), cy + Inches(0.15), Inches(0.42), Inches(0.42),
                     ic, 13, color=WHITE, align=PP_ALIGN.CENTER)
-            ty = sy + Inches(0.7)
+            ty = cy + Inches(0.7)
         else:
-            ty = sy + Inches(0.15)
-
+            ty = cy + Inches(0.15)
         # Card title
-        add_box(s, cx + Inches(0.15), ty, cw - Inches(0.3), Inches(0.35),
-                t, 14, bold=True, color=clr)
-
+        add_box(s, cx + Inches(0.15), ty, cw - Inches(0.3), Inches(0.3),
+                t, 13, bold=True, color=clr)
         # Items
-        ay = ty + Inches(0.42)
+        ay = ty + Inches(0.35)
         for item in items:
-            add_box(s, cx + Inches(0.15), ay, cw - Inches(0.3), Inches(0.25),
-                    f"• {item}", 10, color=TEXT_D)
-            ay += Inches(0.24)
+            add_box(s, cx + Inches(0.15), ay, cw - Inches(0.3), Inches(0.22),
+                    f"• {item}", 9, color=TEXT_D)
+            ay += Inches(0.22)
 
     add_footer(s)
     return s
@@ -342,8 +339,8 @@ def two_col_cards(action_title, left_data, right_data, subtitle=None, ref=None,
                   left_color=BLUE, right_color=TEAL):
     """Two-column layout with card containers."""
     s = content_slide(action_title, subtitle, ref)
-    cw = Inches(5.8)
-    gap = Inches(0.35)
+    gap = Inches(0.3)
+    cw = (SLIDE_W - gap - 2 * M) / 2  # proper width: (13.333 - 0.3 - 1.2) / 2 = 5.9165"
     sy = Inches(1.15)
     ch = SLIDE_H - sy - Inches(0.7)
 
@@ -370,10 +367,9 @@ def callout_slide(action_title, callouts, subtitle=None, ref=None, note_text=Non
     """4 callout cards with big numbers + description."""
     s = content_slide(action_title, subtitle, ref)
     n = len(callouts)
-    cw = Inches(2.8) if n <= 4 else Inches(2.2)
-    gap = Inches(0.35)
-    tw = n * cw + (n - 1) * gap
-    sx = (SLIDE_W - tw) / 2
+    gap = Inches(0.3)
+    cw = (SLIDE_W - 2 * M - (n - 1) * gap) / n
+    sx = M
     sy = Inches(1.15)
 
     for i, (num, lb, clr) in enumerate(callouts):
@@ -397,11 +393,10 @@ def callout_slide(action_title, callouts, subtitle=None, ref=None, note_text=Non
 def flow_slide(action_title, steps_data, subtitle=None, ref=None, note_text=None):
     """Horizontal flow diagram with arrow connectors."""
     s = content_slide(action_title, subtitle, ref)
-    bw = Inches(2.6)
-    bgap = Inches(0.5)
     n = len(steps_data)
-    tw = n * bw + (n - 1) * bgap
-    ssx = (SLIDE_W - tw) / 2
+    bgap = Inches(0.35)
+    bw = (SLIDE_W - 2 * M - (n - 1) * bgap) / n
+    ssx = M
     sy = Inches(1.3)
 
     for i, (num, title, desc, clr) in enumerate(steps_data):
