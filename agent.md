@@ -492,6 +492,197 @@ print('🎯 Stack siap — bisa generate PPT')
 
 ---
 
+## 🎨 Visual Design System — Background Shapes, Color & Logo Patterns
+
+Semua pattern design sudah di-engine, LLM cukup paham agar konsisten.
+
+### 1. Background per Tipe Slide
+
+| Slide Type | Background | Warna | Pattern |
+|------------|-----------|-------|---------|
+| **Cover** | Full-bleed navy | `#0A1628` | 4 decorative ovals di pojok (`NAVY_D` & `NAVY_L`) |
+| **Section** | Full-bleed navy | `#0A1628` | 4 decorative ovals (posisi berbeda dari cover) |
+| **Content** | Ice solid | `#F5F7FA` | Header navy + gold bar + footer |
+| **Card** | Rounded rect white | `#FFFFFF` | Left accent bar 0.05" warna semantic |
+| **Callout** | Rounded rect white | `#FFFFFF` | Top accent bar 0.05" warna semantic |
+| **Closing** | Full-bleed navy | `#0A1628` | 3 decorative ovals (mirip cover) |
+
+### 2. Decorative Oval Pattern
+
+Oval digunakan sebagai elemen dekoratif di slide gelap (cover, section, closing):
+
+```
+Cover:         Section:           Closing:
+┌──────────┐   ┌──────────┐       ┌──────────┐
+│◉ ○       │   │◉◌        │       │◉         │
+│          │   │          │       │          │
+│         ◉│   │    ◉     │       │     ◉    │
+│ ○        │   │     ◉   ◌│       │         ◉│
+└──────────┘   └──────────┘       └──────────┘
+
+Ukuran: 2.5" - 7"
+Warna: NAVY_D (#0D1F3C) dan NAVY_L (#12294A)
+Posisi: random di luar content area
+```
+
+Detail posisi ovals (dalam inches):
+```
+Cover:
+  oval(-1, -1.5, 4.5, NAVY_D)     // kiri atas besar
+  oval(8.5, -2, 7, NAVY_D)        // kanan atas besar
+  oval(10, 4.5, 5, NAVY_D)        // kanan bawah
+  oval(0.5, 5.5, 2.5, NAVY_L)     // kiri bawah kecil
+
+Section:
+  oval(-1.5, -1.5, 5, NAVY_L)     // kiri atas
+  oval(-0.5, -0.5, 3.5, NAVY_D)   // kiri atas kecil
+  oval(9.5, 4, 5, NAVY_D)         // kanan bawah
+  oval(10.5, 3, 3, NAVY_L)        // kanan tengah
+
+Closing:
+  oval(-1, -1.5, 4.5, NAVY_D)     // kiri atas
+  oval(8.5, -2, 7, NAVY_D)        // kanan atas
+  oval(10, 4.5, 5, NAVY_D)        // kanan bawah
+```
+
+### 3. Header Pattern (Content Slides)
+
+```
+┌─────────────────────────────────────────────┐
+│ ═══ gold_bar 0.035" (#C8962E)              │ ← y=0
+│                                              │
+│ ████████████████████████████████████████████ │ ← navy 0.9" (#0A1628)
+│ ████│                                        │
+│ ██│█│  Judul 20pt bold white                 │
+│ ██│█│  Subtitle 9pt TEXT_L                   │
+│ ██│█│                                        │
+│ ██│█│  0.07" gold accent bar (#C8962E)       │
+│ ██│█│  di x=0.6", y=0.12", height=0.55"     │
+│                                              │
+│ ═══ gap 0.21"                                │
+├─────────────────────────────────────────────┤
+```
+
+### 4. Card Pattern
+
+Setiap card dalam card_grid punya pattern konsisten:
+
+```
+┌───────────────────────────┐
+│ ┃  ◯ icon emoji 0.42"    │ ← icon circle (colored, 13pt white)
+│ ┃                        │
+│ ┃  Title 13pt bold       │ ← colored sesuai card
+│ ┃                        │
+│ ┃  • Item 1 9pt          │ ← bullet items
+│ ┃  • Item 2              │
+│ ┃  • Item 3              │
+│ ┃                        │
+│  0.05" accent bar        │ ← warna semantic di kiri
+└───────────────────────────┘
+  rounded rectangle
+  radius=0.04", border=ICE
+  padding internal=0.15"
+```
+
+**Ukuran Card:**
+```
+Card width  (4 kolom) = (12.133 - 3×0.3) / 4 = 2.808"
+Card height (2 baris) = (5.85 - 1×0.3) / 2 = 2.775"
+Icon circle = 0.42"
+Left accent bar = 0.05"
+```
+
+### 5. Footer Pattern
+
+```
+┌─────────────────────────────────────────────┐
+│ ═══ navy bar 0.03" (#0A1628)               │
+│ Sumber: ...                    [page #]     │
+│ 7pt TEXT_L                     8pt TEXT_L   │
+│ x=0.6"                         x=12.333"    │
+└─────────────────────────────────────────────┘
+  y = 7.0" (SLIDE_H - FOOTER_H)
+```
+
+### 6. Logo / Icon System
+
+Tidak ada logo gambar. Semua ikon pakai **emoji** dalam lingkaran warna:
+
+| Ukuran | Diameter | Font Size Emoji | Untuk |
+|--------|----------|----------------|-------|
+| Icon card | 0.42" | 13pt | card_grid |
+| Badge TOC | 0.5" | 14pt | daftar isi |
+| Circle flow | 0.5" | 18pt | flow step number |
+| Oval NSR | 0.55" | 18pt | nsr_factors |
+
+**Posisi icon dalam card:**
+```python
+icon_y = 0.15"     # dari atas card
+icon_size = 0.42"  # diameter
+title_y = icon_y + icon_size + 0.13"  # title di bawah icon
+```
+
+**Emoji yang umum dipakai:**
+```
+🏛️📊📢💰📐🆔👤🚫🔍📬⏳🎯🤝🏆🎈🌊🎬🎭🏷️🧱📄🚌
+```
+
+### 7. Warna Rotasi untuk Multi-Card
+
+Saat punya banyak card, rotasi warna otomatis:
+```python
+colors = [
+    "#2563EB",  # Blue  — definisi, info
+    "#0D9488",  # Teal  — prosedur, data
+    "#B8860B",  # Warm  — peringatan, faktor
+    "#1B3A6B",  # Navy_M — pendukung
+]
+# Untuk 7 card: Blue, Teal, Warm, Navy_M, Blue, Teal, Warm
+```
+
+### 8. Visual Hierarchy (Typography)
+
+| Elemen | Font | Size | Weight | Color |
+|--------|------|------|--------|-------|
+| Cover title | Calibri | 40pt | Bold | White |
+| Section title | Calibri | 34pt | Bold | White |
+| Header title | Calibri | 20pt | Bold | White |
+| Action title | Calibri | 20pt | Bold | White |
+| Card title | Calibri | 13pt | Bold | Semantic |
+| Card items | Calibri | 9pt | Regular | TEXT_D |
+| Callout number | Calibri | 32pt | Bold | Semantic |
+| Table header | Calibri | 11pt | Bold | White |
+| Table cell | Calibri | 11pt | Regular | TEXT_D |
+| Source footer | Calibri | 7pt | Regular | TEXT_L |
+| Page number | Calibri | 8pt | Regular | TEXT_L |
+
+### 9. Contoh: Cover Visual Layout
+
+```
+┌────────────────────────────────────────┐
+│              ◉ (oval NAVY_D)           │
+│  BERITA DAERAH (12pt gold bold)        │
+│  KOTA BEKASI (14pt white bold)         │
+│                                        │
+│  PERATURAN [...] (20pt white bold)     │
+│  NOMOR 51 TAHUN 2024 (15pt gold bold)  │
+│  ════════ gold bar 0.04"              │
+│                                        │
+│  TENTANG                               │
+│  PENGELOLAAN PAJAK REKLAME             │
+│  40pt white bold                       │
+│                                        │
+│  ┌──────────────────────────────┐      │
+│  │ Pemerintah Kota Bekasi · 2024│      │ ← badge NAVY_D
+│  │ Berlaku sejak diundangkan    │      │
+│  └──────────────────────────────┘      │
+│                        ◉ (oval NAVY_D) │
+│  ════════ gold bar 0.22"              │
+└────────────────────────────────────────┘
+```
+
+---
+
 ## ⚠️ Troubleshooting
 
 | Masalah | Penyebab | Solusi |
