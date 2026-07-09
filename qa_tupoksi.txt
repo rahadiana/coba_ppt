@@ -1,0 +1,165 @@
+================================================================================
+  TANYA JAWAB — RESUME TUPOKSI BIDANG e-GOVERNMENT DISKOMINFOSTANDI KOTA BEKASI
+  Q&A — RESUME OF MAIN TASKS & FUNCTIONS, e-GOVERNMENT DIVISION
+================================================================================
+  Pemapar / Presenter  : Maulana
+  Tanggal / Date       : 2025
+================================================================================
+
+
+================================================================================
+  PERTANYAAN 1 — QUESTION 1
+================================================================================
+
+------------------------------------------------------------------------------
+  BAHASA INDONESIA
+------------------------------------------------------------------------------
+
+Penanya / Questioner  : Pendi
+Penjawab / Respondent : Robi
+
+Pertanyaan:
+"Selamat siang, Maulana. Saya Pendi. Dari paparan tadi disebutkan bahwa
+Bidang e-Government memiliki tiga pilar strategis. Saya ingin bertanya kepada
+Robi — bagaimana implementasi pilar Tata Kelola SPBE di lapangan? Apa saja
+tantangan utamanya?"
+
+Jawaban:
+"Terima kasih, Pendi. Saya Robi akan menjawab.
+
+Implementasi pilar Tata Kelola SPBE di lapangan berfokus pada tiga aspek utama:
+
+Pertama, penyusunan strategi dan roadmap. Kami telah menyusun arsitektur SPBE
+dan peta rencana yang menjadi panduan bagi seluruh perangkat daerah di
+lingkungan Kota Bekasi.
+
+Kedua, koordinasi lintas perangkat daerah. Kami melaksanakan dan
+mengoordinasikan program SPBE agar seluruh OPD dapat mengadopsi sistem
+pemerintahan berbasis elektronik secara seragam dan terpadu.
+
+Ketiga, pengembangan kebijakan dan kapasitas SDM. Kami mengembangkan kebijakan
+SPBE yang adaptif serta memperkuat kapasitas SDM dan peran Government CIO
+di setiap perangkat daerah.
+
+Tantangan utamanya adalah kesiapan infrastruktur dan sumber daya manusia di
+masing-masing OPD, serta kebutuhan untuk menyelaraskan seluruh sistem yang
+sudah berjalan agar dapat terintegrasi dalam satu platform SPBE daerah."
+
+
+------------------------------------------------------------------------------
+  ENGLISH VERSION
+------------------------------------------------------------------------------
+
+Questioner / Penanya  : Pendi
+Respondent / Penjawab : Robi
+
+Question:
+"Good afternoon, Maulana. I'm Pendi. From the presentation, it was mentioned
+that the e-Government Division has three strategic pillars. I would like to ask
+Robi — how is the SPBE Governance pillar implemented in the field? What are the
+main challenges?"
+
+Answer:
+"Thank you, Pendi. I'm Robi and I'll answer.
+
+The implementation of the SPBE Governance pillar in the field focuses on three
+main aspects:
+
+First, strategy and roadmap development. We have developed the SPBE architecture
+and master plan that serve as guidelines for all regional agencies within
+Bekasi City.
+
+Second, cross-agency coordination. We implement and coordinate SPBE programs so
+that all regional apparatus organizations can adopt an electronic-based
+government system in a uniform and integrated manner.
+
+Third, policy development and HR capacity building. We develop adaptive SPBE
+policies and strengthen HR capacity and the role of Government CIO in each
+regional agency.
+
+The main challenges are the readiness of infrastructure and human resources in
+each regional agency, as well as the need to align all existing systems so they
+can be integrated into a single regional SPBE platform."
+
+
+================================================================================
+  PERTANYAAN 2 — QUESTION 2
+================================================================================
+
+------------------------------------------------------------------------------
+  BAHASA INDONESIA
+------------------------------------------------------------------------------
+
+Penanya / Questioner  : Bidang TIK
+Penjawab / Respondent : Rana
+
+Pertanyaan:
+"Selamat siang, Maulana. Kami dari Bidang TIK. Terkait dengan paparan tentang
+empat sistem dan aplikasi strategis yang dikelola — khususnya Aplikasi SPLP
+dan Web Pemerintah Kota. Kami ingin bertanya kepada Rana — bagaimana mekanisme
+pengelolaan dan pengembangan kedua sistem ini? Apakah ada standar khusus yang
+diterapkan?"
+
+Jawaban:
+"Terima kasih, Bidang TIK. Saya Rana akan menjelaskan.
+
+Terkait pengelolaan dan pengembangan Web Pemerintah Kota serta Aplikasi SPLP,
+kami menerapkan mekanisme sebagai berikut:
+
+Untuk Web Pemerintah Kota, kami melakukan pengelolaan secara terpusat meliputi:
+pemeliharaan konten dan infrastruktur portal, pengelolaan domain dan subdomain
+pemerintah daerah, serta supervisi dan standarisasi pengembangan agar sesuai
+dengan kebutuhan publik dan standar keamanan informasi.
+
+Untuk Aplikasi SPLP (Sistem Penghubung Layanan Pemerintah), sistem ini
+terintegrasi dengan Kemenkomdigi sebagai tulang punggung interkoneksi layanan
+pemerintah. Kami mengelola pengembangan dan pemeliharaan sistem agar seluruh
+perangkat daerah dapat saling bertukar data dan layanan secara aman dan
+terstandarisasi.
+
+Standar khusus yang diterapkan meliputi: standarisasi pengembangan aplikasi,
+standar keamanan informasi, dan kepatuhan terhadap arsitektur SPBE daerah yang
+telah ditetapkan. Selain itu, kami juga melakukan sosialisasi dan peningkatan
+kapasitas SDM pengelola sistem di masing-masing OPD."
+
+
+------------------------------------------------------------------------------
+  ENGLISH VERSION
+------------------------------------------------------------------------------
+
+Questioner / Penanya  : ICT Division (Bidang TIK)
+Respondent / Penjawab : Rana
+
+Question:
+"Good afternoon, Maulana. We are from the ICT Division. Regarding the
+presentation on the four strategic systems and applications — specifically the
+SPLP Application and the City Government Website. We would like to ask Rana —
+what is the management and development mechanism for these two systems? Are
+there any specific standards applied?"
+
+Answer:
+"Thank you, ICT Division. I'm Rana and I'll explain.
+
+Regarding the management and development of the City Government Website and the
+SPLP Application, we implement the following mechanisms:
+
+For the City Government Website, we perform centralized management covering:
+content and infrastructure maintenance of the portal, management of regional
+government domains and subdomains, as well as supervision and standardization of
+development to align with public needs and information security standards.
+
+For the SPLP Application (Government Service Gateway System), this system is
+integrated with Kemenkomdigi as the backbone of government service
+interconnection. We manage the development and maintenance of the system so
+that all regional agencies can exchange data and services securely and in a
+standardized manner.
+
+Specific standards applied include: application development standardization,
+information security standards, and compliance with the established regional
+SPBE architecture. In addition, we also conduct socialization and capacity
+building for system managers in each regional agency."
+
+
+================================================================================
+  -- END OF DOCUMENT --
+================================================================================
