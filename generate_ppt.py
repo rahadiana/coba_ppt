@@ -2,35 +2,58 @@
 """
 generate_ppt.py — RESUME TUPOKSI e-Government PPT Generator
 =============================================================
-Menggunakan engine dari src/ppt_engine.py sebagai foundation.
-Tanpa icon, tanpa oval, tanpa decorative circles.
-Desain: clean typography-driven, McKinsey-style.
+Pakai engine src/ppt_engine.py — tanpa icon/oval/circle.
+Desain: modern, clean, attractive — gradient-style layering.
 """
 
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
+from pptx.dml.color import RGBColor
 from ppt_engine import Engine, MSO_SHAPE, Pt, Inches
+from pptx.oxml.ns import qn
+from lxml import etree
+
+
+# ─── Color Palette: Ocean-inspired ───────────────────────────────
+OCEAN_DARK   = RGBColor(0x0A, 0x16, 0x28)  # deepest navy
+OCEAN_MID    = RGBColor(0x0F, 0x2A, 0x4A)  # mid navy
+OCEAN_BLUE   = RGBColor(0x1A, 0x56, 0x76)  # blue-teal
+TEAL          = RGBColor(0x0D, 0x94, 0x88)  # bright teal
+TEAL_LIGHT   = RGBColor(0xE6, 0xF7, 0xF5)  # teal tint
+GOLD          = RGBColor(0xF5, 0x9E, 0x0B)  # warm amber
+GOLD_LIGHT   = RGBColor(0xFE, 0xF3, 0xC7)  # amber tint
+WHITE         = RGBColor(0xFF, 0xFF, 0xFF)
+OFF_WHITE    = RGBColor(0xF8, 0xFA, 0xFC)
+LIGHT_GRAY   = RGBColor(0xF1, 0xF5, 0xF9)
+BORDER_LIGHT = RGBColor(0xE2, 0xE8, 0xF0)
+DARK_TEXT     = RGBColor(0x1E, 0x29, 0x3B)
+MID_TEXT      = RGBColor(0x47, 0x55, 0x69)
+LIGHT_TEXT    = RGBColor(0x94, 0xA3, 0xB8)
+
+# Card accent colors (for variety)
+ACCENTS = [OCEAN_DARK, OCEAN_BLUE, TEAL, GOLD]
 
 
 def build_presentation():
-    """Build PPT menggunakan engine helpers — zero icons/ovals."""
     engine = Engine()
     C = engine.C
     L = engine.L
 
-    # ── Init presentation ──
     from pptx import Presentation
+    from pptx.enum.text import PP_ALIGN as PA
+
     prs = Presentation()
     prs.slide_width = Inches(L.SLIDE_W)
     prs.slide_height = Inches(L.SLIDE_H)
     engine.prs = prs
 
-    # Constants
-    MX = L.MARGIN_H      # 0.6"
-    CW = L.cw             # 12.133"
-    PG = [0]              # page counter
+    MX = L.MARGIN_H       # 0.6"
+    CW = L.cw              # 12.133"
+    PG = [0]
     BLANK = prs.slide_layouts[6]
+
+    # ─── Helper Functions ──────────────────────────────────────
 
     def new_slide():
         return prs.slides.add_slide(BLANK)
@@ -40,21 +63,35 @@ def build_presentation():
         bg.fill.solid()
         bg.fill.fore_color.rgb = color
 
-    def add_bar(slide, l, t, w, h, color):
-        s = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, l, t, w, h)
+    def rect(slide, l, t, w, h, color):
+        s = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+                                    Inches(l), Inches(t),
+                                    Inches(w), Inches(h))
         s.fill.solid()
         s.fill.fore_color.rgb = color
         s.line.fill.background()
         return s
 
-    def add_box(slide, l, t, w, h, text, size=12, bold=False, color=None,
-                align=None, name="Calibri"):
-        if color is None:
-            color = C.TEXT_D
-        if align is None:
-            from pptx.enum.text import PP_ALIGN as PA
-            align = PA.LEFT
-        tb = slide.shapes.add_textbox(l, t, w, h)
+    def rrect(slide, l, t, w, h, fill=None, border=None, radius=0.04):
+        if fill is None: fill = WHITE
+        sh = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                     Inches(l), Inches(t),
+                                     Inches(w), Inches(h))
+        sh.fill.solid()
+        sh.fill.fore_color.rgb = fill
+        if border:
+            sh.line.color.rgb = border
+            sh.line.width = Pt(0.5)
+        else:
+            sh.line.fill.background()
+        sh.adjustments[0] = radius
+        return sh
+
+    def box(slide, l, t, w, h, text, size=12, bold=False, color=None,
+            align=PA.LEFT, name="Calibri"):
+        if color is None: color = DARK_TEXT
+        tb = slide.shapes.add_textbox(Inches(l), Inches(t),
+                                       Inches(w), Inches(h))
         tf = tb.text_frame
         tf.word_wrap = True
         p = tf.paragraphs[0]
@@ -66,197 +103,253 @@ def build_presentation():
         p.alignment = align
         return tb
 
-    def add_rrect(slide, l, t, w, h, fill=None, line=None, radius=0.04):
-        if fill is None:
-            fill = C.WHITE
-        if line is None:
-            line = C.ICE
-        sh = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, l, t, w, h)
-        sh.fill.solid()
-        sh.fill.fore_color.rgb = fill
-        sh.line.color.rgb = line
-        sh.line.width = Pt(0.5)
-        sh.adjustments[0] = radius
-        return sh
-
-    def content_header(slide, title, subtitle=None):
-        """Standard content slide header: gold bar + navy header."""
-        add_bar(slide, 0, 0, L.SLIDE_W, Pt(3), C.GOLD)
-        hdr_h = L.HEADER_H - 0.04
-        add_bar(slide, 0, Pt(3), L.SLIDE_W, Inches(hdr_h), C.NAVY)
-        add_bar(slide, MX, 0.12, 0.07, 0.55, C.GOLD)
-        add_box(slide, MX + 0.22, 0.15, CW - 0.5, 0.48,
-                title, 20, bold=True, color=C.WHITE)
-        if subtitle:
-            add_box(slide, MX + 0.22, 0.63, CW - 0.5, 0.28,
-                    subtitle, 9, color=C.TEXT_L)
-
-    def content_slide(title, subtitle=None):
-        s = new_slide()
-        solid_bg(s, C.OFF_W)
-        content_header(s, title, subtitle)
-        return s
-
-    def render_bullets(slide, items):
-        """Clean numbered items with left accent bar."""
-        add_bar(slide, MX, L.cy, Pt(4), Inches(3.8), C.NAVY)
-        bx = MX + 0.3
-        bw = CW - 0.3
-        for i, item in enumerate(items):
-            y = L.cy + i * 0.55
-            add_box(slide, bx, y, 0.35, 0.35, f"{i+1}.", 16, bold=True, color=C.GOLD)
-            add_box(slide, bx + 0.4, y + 0.02, bw - 0.4, 0.45, item, 14, color=C.TEXT_D)
-            if i < len(items) - 1:
-                add_bar(slide, bx + 0.4, y + 0.45, bw - 0.4, Pt(0.5), C.ICE_D)
+    def multi_line(slide, l, t, w, h, lines, size=12, color=None,
+                   spacing=8, bold_first=False):
+        """Text box with multiple lines/paragraphs."""
+        if color is None: color = DARK_TEXT
+        tb = slide.shapes.add_textbox(Inches(l), Inches(t),
+                                       Inches(w), Inches(h))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        for i, line in enumerate(lines):
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.text = line
+            p.font.size = Pt(size)
+            p.font.bold = (bold_first and i == 0)
+            p.font.color.rgb = color
+            p.font.name = "Calibri"
+            p.space_after = Pt(spacing)
+        return tb
 
     def footer(slide):
-        add_bar(slide, 0, L.SLIDE_H - L.FOOTER_H, L.SLIDE_W, Pt(2), C.NAVY)
+        rect(slide, 0, L.SLIDE_H - 0.45, L.SLIDE_W, 0.45, OFF_WHITE)
+        rect(slide, 0, L.SLIDE_H - 0.45, L.SLIDE_W, Pt(1.5), BORDER_LIGHT)
         PG[0] += 1
-        add_box(slide, MX, L.SLIDE_H - L.FOOTER_H + 0.06, 4, 0.22,
-                "Sumber: RESUME TUPOKSI egov.docx", 7, color=C.TEXT_L)
-        add_box(slide, L.SLIDE_W - 1.0, L.SLIDE_H - L.FOOTER_H + 0.06, 0.8, 0.22,
-                str(PG[0]), 8, color=C.TEXT_L, align=PA_RIGHT)
+        box(slide, MX, L.SLIDE_H - 0.38, 4, 0.22,
+            "Sumber: RESUME TUPOKSI egov.docx", 7, color=LIGHT_TEXT)
+        box(slide, L.SLIDE_W - 1.0, L.SLIDE_H - 0.38, 0.8, 0.22,
+            str(PG[0]), 8, color=LIGHT_TEXT, align=PA.RIGHT)
 
-    from pptx.enum.text import PP_ALIGN as PA
-    global PA_RIGHT
-    PA_RIGHT = PA.RIGHT
-    PA_CENTER = PA.CENTER
+    def content_slide(slide_title, subtitle=None):
+        """Modern content slide with gradient-style header."""
+        s = new_slide()
+        solid_bg(s, WHITE)
 
-    # ══════════════════════════════════════════════════════════════
-    # SLIDE 1 — Cover
-    # ══════════════════════════════════════════════════════════════
+        # Top gradient effect (layered rectangles)
+        rect(s, 0, 0, L.SLIDE_W, 0.04, GOLD)        # gold accent line
+        rect(s, 0, 0.04, L.SLIDE_W, 1.15, OCEAN_DARK)  # dark header
+        rect(s, 0, 1.19, L.SLIDE_W, 0.03, TEAL)      # teal separator
+
+        # Title
+        box(s, MX + 0.15, 0.18, CW - 0.3, 0.55,
+            slide_title, 22, bold=True, color=WHITE)
+
+        # Subtitle
+        if subtitle:
+            box(s, MX + 0.15, 0.72, CW - 0.3, 0.35,
+                subtitle, 9, color=TEAL_LIGHT)
+
+        return s
+
+    # ══════════════════════════════════════════════════════════
+    #  SLIDE 1 — COVER
+    # ══════════════════════════════════════════════════════════
     s = new_slide()
-    solid_bg(s, C.NAVY)
-    add_bar(s, 0, L.SLIDE_H - 0.22, L.SLIDE_W, 0.22, C.GOLD)
+    solid_bg(s, OCEAN_DARK)
 
-    add_box(s, MX, 2.0, CW, 1.2, "RESUME TUPOKSI", 48, bold=True, color=C.WHITE)
-    add_box(s, MX, 3.4, CW, 0.5, "Bidang e-Government", 22, color=C.TEXT_M)
-    add_box(s, MX, 4.0, CW, 0.4, "Diskominfostandi Kota Bekasi", 14, color=C.TEXT_L)
-    add_bar(s, MX, 4.6, 2.5, Pt(3), C.GOLD)
-    add_box(s, MX, 5.0, CW, 0.3, "2025", 11, color=C.TEXT_L)
+    # Geometric layered blocks for visual depth
+    rect(s, 0, 0, L.SLIDE_W, 0.04, GOLD)
+    rect(s, L.SLIDE_W - 4.5, -0.5, 5, 4.5, OCEAN_MID)
+    rect(s, L.SLIDE_W - 3.5, 3.2, 4, 4.5, OCEAN_MID)
+    rect(s, -0.5, 5.5, 3, 2.5, OCEAN_MID)
+
+    # Bottom bar
+    rect(s, 0, L.SLIDE_H - 0.25, L.SLIDE_W, 0.25, TEAL)
+
+    box(s, MX, 2.0, CW, 1.0, "RESUME TUPOKSI", 46, bold=True, color=WHITE)
+    box(s, MX, 3.2, CW, 0.5, "Bidang e-Government", 22, color=TEAL_LIGHT)
+    box(s, MX, 3.8, CW, 0.4, "Diskominfostandi Kota Bekasi", 14, color=LIGHT_TEXT)
+    rect(s, MX, 4.4, 2.5, Pt(3), GOLD)
+    box(s, MX, 4.7, CW, 0.3, "2025", 11, color=LIGHT_TEXT)
+
     PG[0] += 1
 
-    # ══════════════════════════════════════════════════════════════
-    # SLIDE 2 — Tiga Pilar
-    # ══════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════
+    #  SLIDE 2 — 3 PILAR (clean, centered, no icons)
+    # ══════════════════════════════════════════════════════════
     s = content_slide("Tiga Pilar Utama Tugas Pokok",
                       "Bidang e-Government mencakup 3 area strategis dalam transformasi digital daerah")
 
     pillars = [
         ("01", "Pengembangan Aplikasi\n& Sistem Informasi",
-         "Supervisi, standarisasi, dan\npengelolaan SPLP", C.NAVY),
+         "Supervisi, standarisasi, dan\npengelolaan SPLP", OCEAN_DARK),
         ("02", "Tata Kelola e-Government\n(SPBE)",
-         "Strategi, roadmap, arsitektur,\ndan kapasitas SDM & GCIO", C.BLUE),
+         "Strategi, roadmap, arsitektur,\ndan kapasitas SDM & GCIO", OCEAN_BLUE),
         ("03", "Pengembangan Kota Cerdas\n(Smart City)",
-         "Masterplan, kolaborasi lintas\nsektor, dan evaluasi program", C.TEAL),
+         "Masterplan, kolaborasi lintas\nsektor, dan evaluasi program", TEAL),
     ]
 
     n = len(pillars)
-    card_w = L.col_width(n, 0.4)
-    gap = 0.4
-    start_x = (L.SLIDE_W - (n * card_w + (n - 1) * gap)) / 2
-    card_h = 3.8
+    card_w = L.col_width(n, 0.35)
+    gap = 0.35
+    start_x = (L.SLIDE_W - (n * card_w + (n-1)*gap)) / 2
+    card_h = 3.6
+    card_y = 1.6
 
     for i, (num, title, desc, clr) in enumerate(pillars):
         cx = start_x + i * (card_w + gap)
-        add_rrect(s, cx, L.cy + 0.3, card_w, card_h)
-        add_bar(s, cx, L.cy + 0.3, card_w, Pt(5), clr)
-        add_box(s, cx + 0.2, L.cy + 0.65, 0.5, 0.35, num, 16, bold=True, color=clr)
-        add_box(s, cx + 0.2, L.cy + 1.1, card_w - 0.4, 0.9,
-                title, 15, bold=True, color=C.NAVY)
-        add_bar(s, cx + 0.2, L.cy + 2.1, card_w - 0.4, Pt(1), C.ICE)
-        add_box(s, cx + 0.2, L.cy + 2.3, card_w - 0.4, 1.2,
-                desc, 12, color=C.TEXT_M)
+
+        # Card
+        rrect(s, cx, card_y, card_w, card_h, fill=WHITE, border=BORDER_LIGHT)
+
+        # Top color block (like a header band)
+        rect(s, cx, card_y, card_w, 0.65, clr)
+
+        # Number in white on the color block
+        box(s, cx + 0.2, card_y + 0.12, 0.5, 0.35, num, 20, bold=True, color=WHITE)
+
+        # Sub-label "PILAR" 
+        box(s, cx + 0.7, card_y + 0.15, 1.5, 0.25, "PILAR UTAMA", 7, color=TEAL_LIGHT)
+
+        # Title below the block
+        box(s, cx + 0.25, card_y + 0.85, card_w - 0.5, 0.85,
+            title, 16, bold=True, color=OCEAN_DARK)
+
+        # Thin separator
+        rect(s, cx + 0.25, card_y + 1.8, card_w - 0.5, Pt(1.5), BORDER_LIGHT)
+
+        # Description
+        box(s, cx + 0.25, card_y + 2.0, card_w - 0.5, 1.2,
+            desc, 12, color=MID_TEXT)
 
     footer(s)
 
-    # ══════════════════════════════════════════════════════════════
-    # SLIDE 3 — Sistem & Aplikasi (2x2 grid cards)
-    # ══════════════════════════════════════════════════════════════
-    s = content_slide("Empat Sistem & Aplikasi Strategis yang Dikelola",
+    # ══════════════════════════════════════════════════════════
+    #  SLIDE 3 — SISTEM & APLIKASI (2x2 grid, refined)
+    # ══════════════════════════════════════════════════════════
+    s = content_slide("Empat Sistem & Aplikasi Strategis",
                       "Layanan digital yang dioperasikan dan dipelihara oleh Bidang e-Government")
 
     systems = [
-        ("Web Pemerintah Kota", "Admin Teknis Web Pemkot & Web Diskominfo", C.NAVY),
-        ("Mobile App PSW", "Platform Smart City — Pekan Smart City", C.BLUE),
-        ("Web Kota Cerdas", "Admin Teknis Portal Kota Cerdas", C.TEAL),
-        ("Aplikasi SPLP", "Sistem Penghubung Layanan Pemerintah (Kemenkomdigi)", C.GOLD),
+        ("Web Pemerintah Kota", "Admin Teknis Web Pemkot\n& Web Diskominfo", OCEAN_DARK),
+        ("Mobile App PSW", "Platform Smart City\n— Pekan Smart City", OCEAN_BLUE),
+        ("Web Kota Cerdas", "Admin Teknis\nPortal Kota Cerdas", TEAL),
+        ("Aplikasi SPLP", "Sistem Penghubung Layanan\nPemerintah (Kemenkomdigi)", GOLD),
     ]
 
-    cw2 = L.col_width(2, 0.5)
-    rh2 = 1.6
-    gh2 = 0.5
-    gv2 = 0.4
-    grid_sx = (L.SLIDE_W - (2 * cw2 + gh2)) / 2
+    cw2 = L.col_width(2, 0.4)
+    rh2 = 1.7
+    gh2 = 0.4
+    gv2 = 0.3
+    grid_sx = (L.SLIDE_W - (2*cw2 + gh2)) / 2
+    ac_y = 1.6
 
     for i, (title, desc, clr) in enumerate(systems):
         col = i % 2
         row = i // 2
         cx = grid_sx + col * (cw2 + gh2)
-        cy = L.cy + row * (rh2 + gv2)
+        cy = ac_y + row * (rh2 + gv2)
 
-        add_rrect(s, cx, cy, cw2, rh2)
-        add_bar(s, cx, cy, Pt(5), rh2, clr)
-        add_box(s, cx + 0.25, cy + 0.25, cw2 - 0.5, 0.4,
-                title, 17, bold=True, color=clr)
-        add_box(s, cx + 0.25, cy + 0.75, cw2 - 0.5, 0.6,
-                desc, 13, color=C.TEXT_D)
+        # Card
+        rrect(s, cx, cy, cw2, rh2, fill=WHITE, border=BORDER_LIGHT)
+
+        # Left accent strip
+        rect(s, cx, cy, 0.08, rh2, clr)
+
+        # Title
+        box(s, cx + 0.3, cy + 0.25, cw2 - 0.5, 0.4,
+            title, 18, bold=True, color=clr)
+
+        # Description
+        box(s, cx + 0.3, cy + 0.75, cw2 - 0.5, 0.7,
+            desc, 12, color=MID_TEXT)
 
     footer(s)
 
-    # ══════════════════════════════════════════════════════════════
-    # SLIDE 4-6 — Detail slides with bullets
-    # ══════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════
+    #  SLIDE 4-6 — DETAIL CONTENT (modern numbered layout)
+    # ══════════════════════════════════════════════════════════
 
     details = [
         ("Supervisi & Pengembangan Aplikasi Daerah",
-         "Lingkup kerja pengembangan sistem informasi dan aplikasi perangkat daerah", [
-             "Supervisi, analisis, dan standarisasi pengembangan aplikasi perangkat daerah",
-             "Mengelola dan mengembangkan Sistem Penghubung Layanan Pemerintah (SPLP)",
-             "Pengelolaan domain dan subdomain pemerintah daerah",
-             "Sosialisasi dan peningkatan kapasitas SDM pengelola sistem",
-         ]),
+         "Lingkup kerja pengembangan sistem informasi dan aplikasi perangkat daerah",
+         ["Supervisi, analisis, dan standarisasi pengembangan\n aplikasi perangkat daerah",
+          "Mengelola dan mengembangkan Sistem Penghubung\n Layanan Pemerintah (SPLP)",
+          "Pengelolaan domain dan subdomain\n pemerintah daerah",
+          "Sosialisasi dan peningkatan kapasitas\n SDM pengelola sistem"]),
         ("Akselerasi Program Kota Cerdas",
-         "Strategi dan kolaborasi menuju Smart City yang terintegrasi", [
-             "Menyusun strategi, rencana aksi, dan masterplan Kota Cerdas",
-             "Membangun kolaborasi dengan pemangku kepentingan lintas sektor",
-             "Mengoordinasikan dan mengevaluasi program Kota Cerdas",
-             "Menyelaraskan rencana induk dengan dokumen perencanaan daerah",
-         ]),
+         "Strategi dan kolaborasi menuju Smart City yang terintegrasi",
+         ["Menyusun strategi, rencana aksi,\n dan masterplan Kota Cerdas",
+          "Membangun kolaborasi dengan pemangku\n kepentingan lintas sektor",
+          "Mengoordinasikan dan mengevaluasi\n program Kota Cerdas",
+          "Menyelaraskan rencana induk dengan\n dokumen perencanaan daerah"]),
         ("Penguatan Tata Kelola SPBE",
-         "Kerangka kerja menuju Sistem Pemerintahan Berbasis Elektronik yang matang", [
-             "Menyusun strategi, roadmap, arsitektur, dan peta rencana SPBE",
-             "Melaksanakan dan mengoordinasikan program SPBE lintas perangkat daerah",
-             "Mengembangkan kebijakan dan tata kelola SPBE",
-             "Monitoring, evaluasi, dan rekomendasi perbaikan berkelanjutan",
-         ]),
+         "Kerangka kerja menuju Sistem Pemerintahan\n Berbasis Elektronik yang matang",
+         ["Menyusun strategi, roadmap, arsitektur,\n dan peta rencana SPBE",
+          "Melaksanakan dan mengoordinasikan program\n SPBE lintas perangkat daerah",
+          "Mengembangkan kebijakan dan\n tata kelola SPBE",
+          "Monitoring, evaluasi, dan rekomendasi\n perbaikan berkelanjutan"]),
     ]
 
-    for title, subtitle, items in details:
+    accent_colors = [OCEAN_DARK, TEAL, OCEAN_BLUE]
+
+    for slide_idx, (title, subtitle, items) in enumerate(details):
         s = content_slide(title, subtitle)
-        render_bullets(s, items)
+        accent = accent_colors[slide_idx]
+
+        # Left decorative panel
+        rect(s, MX, 1.5, 0.12, 4.8, accent)
+        rect(s, MX, 1.5, 1.8, 0.06, accent)  # horizontal accent at top
+
+        # Numbered items with blocks
+        for i, item in enumerate(items):
+            iy = 1.8 + i * 1.1
+
+            # Number block
+            rect(s, MX + 0.4, iy, 0.5, 0.5, accent)
+
+            # Number text
+            box(s, MX + 0.4, iy + 0.06, 0.5, 0.4, str(i+1),
+                18, bold=True, color=WHITE, align=PA.CENTER)
+
+            # Item text
+            box(s, MX + 1.15, iy + 0.02, CW - 1.4, 0.8,
+                item, 13, color=DARK_TEXT)
+
+            # Subtle connector line
+            if i < len(items) - 1:
+                rect(s, MX + 0.65, iy + 0.55, Pt(1.5), 0.5, BORDER_LIGHT)
+
         footer(s)
 
-    # ══════════════════════════════════════════════════════════════
-    # SLIDE 7 — Closing
-    # ══════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════
+    #  SLIDE 7 — CLOSING
+    # ══════════════════════════════════════════════════════════
     s = new_slide()
-    solid_bg(s, C.NAVY)
-    add_bar(s, 0, L.SLIDE_H - 0.22, L.SLIDE_W, 0.22, C.GOLD)
+    solid_bg(s, OCEAN_DARK)
 
-    add_box(s, MX, 2.5, CW, 1.0, "Terima Kasih", 44, bold=True, color=C.WHITE, align=PA_CENTER)
-    add_box(s, MX, 3.6, CW, 0.6, "Bidang e-Government — Diskominfostandi Kota Bekasi",
-            18, color=C.TEXT_M, align=PA_CENTER)
-    add_box(s, MX, 4.4, CW, 0.5,
-            "\"Mewujudkan tata kelola pemerintahan yang cerdas, terpadu, dan berkelanjutan\"",
-            12, color=C.TEXT_L, align=PA_CENTER)
+    # Geometric accents
+    rect(s, 0, 0, L.SLIDE_W, 0.04, GOLD)
+    rect(s, L.SLIDE_W - 4, -0.5, 5, 4, OCEAN_MID)
+    rect(s, L.SLIDE_W - 3, 4, 3.5, 4, OCEAN_MID)
+    rect(s, 0, L.SLIDE_H - 0.25, L.SLIDE_W, 0.25, TEAL)
+
+    box(s, MX, 2.2, CW, 1.0, "Terima Kasih", 44, bold=True, color=WHITE, align=PA.CENTER)
+    box(s, MX, 3.4, CW, 0.5,
+        "Bidang e-Government — Diskominfostandi Kota Bekasi",
+        18, color=TEAL_LIGHT, align=PA.CENTER)
+    rect(s, L.SLIDE_W/2 - 1.0, 4.1, 2.0, Pt(2), GOLD)
+    box(s, MX, 4.4, CW, 0.5,
+        "\"Mewujudkan tata kelola pemerintahan yang cerdas,\n terpadu, dan berkelanjutan\"",
+        12, color=LIGHT_TEXT, align=PA.CENTER)
+
     PG[0] += 1
 
     # ── Save ──
     output = "RESUME_TUPOKSI_egov.pptx"
     prs.save(output)
     print(f"✅ PPT berhasil: {output}")
-    print(f"   {len(prs.slides)} slide — clean design, no icons/ovals")
+    print(f"   {len(prs.slides)} slide — modern attractive design")
     return output
 
 
