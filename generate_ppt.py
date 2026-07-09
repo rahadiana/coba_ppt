@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-generate_ppt.py — RESUME TUPOKSI e-Government PPT Generator
-=============================================================
+generate_ppt.py — RESUME TUPOKSI e-Government
+==============================================
 Pakai engine src/ppt_engine.py.
-Creative design dengan icon shapes + Unicode symbols.
-NO circles/ovals — pakai kotak, diamond, line art.
+Icon pake SHAPE (bukan text/unicode) — render di mana aja.
+NO circles/ovals — diamond, triangle, square, chevron.
 """
 
 import os, sys
@@ -14,7 +14,7 @@ from pptx.dml.color import RGBColor
 from ppt_engine import Engine, MSO_SHAPE, Pt, Inches
 from pptx.enum.text import PP_ALIGN as PA
 
-# ─── Color Palette: Ocean-inspired ───────────────────────────────
+# ─── Color Palette ───────────────────────────────────────────────
 DARK    = RGBColor(0x0A, 0x16, 0x28)
 MID     = RGBColor(0x0F, 0x2A, 0x4A)
 BLUE    = RGBColor(0x1A, 0x56, 0x76)
@@ -24,85 +24,35 @@ GOLD    = RGBColor(0xF5, 0x9E, 0x0B)
 GOLD_L  = RGBColor(0xFE, 0xF3, 0xC7)
 WHITE   = RGBColor(0xFF, 0xFF, 0xFF)
 OFF_W   = RGBColor(0xF8, 0xFA, 0xFC)
-LGRAY   = RGBColor(0xF1, 0xF5, 0xF9)
 BORDER  = RGBColor(0xE2, 0xE8, 0xF0)
 TDARK   = RGBColor(0x1E, 0x29, 0x3B)
 TMID    = RGBColor(0x47, 0x55, 0x69)
 TLIGHT  = RGBColor(0x94, 0xA3, 0xB8)
-GREEN   = RGBColor(0x10, 0xB9, 0x81)  # emerald
-PURPLE  = RGBColor(0x8B, 0x5C, 0xF6)  # violet accent
-ORANGE  = RGBColor(0xF9, 0x73, 0x16)  # orange accent
 
-# ─── Unicode Icons ──────────────────────────────────────────────
-ICO_APP   = "▣"   # application
-ICO_GEAR  = "⚙"   # settings/SPBE
-ICO_CITY  = "🏛"   # city/smart city
-ICO_WEB   = "🌐"   # web
-ICO_PHONE = "📱"   # mobile
-ICO_LINK  = "🔗"   # link/connection
-ICO_STAR  = "◆"    # diamond star
-ICO_BOX   = "▣"    # box
-ICO_ARROW = "▶"    # arrow
-ICO_CHECK = "✓"    # check
-ICO_LIST  = "▸"    # list bullet
 
-# ─── Shape Icon Builders ────────────────────────────────────────
-def icon_box(slide, l, t, size, color, symbol="", sym_size=14, sym_color=None):
-    """Square icon box with symbol inside."""
-    s = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                Inches(l), Inches(t),
-                                Inches(size), Inches(size))
+# ─── Shape Helpers ───────────────────────────────────────────────
+
+def add_shape(slide, shape_type, l, t, w, h, fill, rotation=0):
+    s = slide.shapes.add_shape(shape_type, Inches(l), Inches(t),
+                                Inches(w), Inches(h))
     s.fill.solid()
-    s.fill.fore_color.rgb = color
+    s.fill.fore_color.rgb = fill
     s.line.fill.background()
-    s.adjustments[0] = 0.15
-
-    if symbol:
-        if sym_color is None: sym_color = WHITE
-        tb = slide.shapes.add_textbox(Inches(l), Inches(t + size*0.15),
-                                       Inches(size), Inches(size*0.7))
-        tf = tb.text_frame
-        tf.word_wrap = True
-        p = tf.paragraphs[0]
-        p.text = symbol
-        p.font.size = Pt(sym_size)
-        p.font.color.rgb = sym_color
-        p.font.name = "Calibri"
-        p.alignment = PA.CENTER
-    return s
-
-
-def icon_diamond(slide, l, t, size, color):
-    """Diamond shape icon."""
-    # Use rotated square as diamond - python-pptx doesn't have native diamond
-    s = slide.shapes.add_shape(MSO_SHAPE.DIAMOND,
-                                Inches(l), Inches(t),
-                                Inches(size), Inches(size))
-    s.fill.solid()
-    s.fill.fore_color.rgb = color
-    s.line.fill.background()
+    if rotation:
+        s.rotation = rotation
     return s
 
 
 def accent_bar(slide, l, t, w, h, color):
-    """Thin accent bar."""
-    s = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                                Inches(l), Inches(t),
-                                Inches(w), Inches(h))
-    s.fill.solid()
-    s.fill.fore_color.rgb = color
-    s.line.fill.background()
-    return s
+    return add_shape(slide, MSO_SHAPE.RECTANGLE, l, t, w, h, color)
 
 
-def card(slide, l, t, w, h, fill=None):
-    """Rounded card."""
-    if fill is None: fill = WHITE
+def card(slide, l, t, w, h):
     s = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
                                 Inches(l), Inches(t),
                                 Inches(w), Inches(h))
     s.fill.solid()
-    s.fill.fore_color.rgb = fill
+    s.fill.fore_color.rgb = WHITE
     s.line.color.rgb = BORDER
     s.line.width = Pt(0.5)
     s.adjustments[0] = 0.06
@@ -110,52 +60,130 @@ def card(slide, l, t, w, h, fill=None):
 
 
 def txt(slide, l, t, w, h, text, size=12, bold=False, color=None,
-        align=PA.LEFT, name="Calibri"):
+        align=PA.LEFT):
     if color is None: color = TDARK
     tb = slide.shapes.add_textbox(Inches(l), Inches(t),
                                    Inches(w), Inches(h))
-    tf = tb.text_frame
-    tf.word_wrap = True
+    tf = tb.text_frame; tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = text
-    p.font.size = Pt(size)
-    p.font.bold = bold
-    p.font.color.rgb = color
-    p.font.name = name
-    p.alignment = align
+    p.text = text; p.font.size = Pt(size)
+    p.font.bold = bold; p.font.color.rgb = color
+    p.font.name = "Calibri"; p.alignment = align
     return tb
 
 
 def multi_txt(slide, l, t, w, h, lines, size=12, color=None,
-              spacing=4, first_bold=False, first_size=None):
+              spacing=2, first_bold=False, first_size=None):
     if color is None: color = TDARK
     tb = slide.shapes.add_textbox(Inches(l), Inches(t),
                                    Inches(w), Inches(h))
-    tf = tb.text_frame
-    tf.word_wrap = True
+    tf = tb.text_frame; tf.word_wrap = True
     for i, line in enumerate(lines):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.text = line
         p.font.size = Pt(first_size if (i == 0 and first_size) else size)
         p.font.bold = (first_bold and i == 0)
-        p.font.color.rgb = color
-        p.font.name = "Calibri"
+        p.font.color.rgb = color; p.font.name = "Calibri"
         p.space_after = Pt(spacing)
     return tb
 
 
-# ══════════════════════════════════════════════════════════════════
-#  MAIN BUILDER
-# ══════════════════════════════════════════════════════════════════
+# ─── Shape Icons ─────────────────────────────────────────────────
+# Each returns (left_offset_adjustment)
+
+def icon_app(slide, l, t, s, color):
+    """App icon: rounded square with inner square."""
+    # Outer rounded square
+    add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, l, t, s, s, color)
+    # Inner square (lighter)
+    p = 0.2
+    add_shape(slide, MSO_SHAPE.RECTANGLE, l+p, t+p, s-2*p, s-2*p, WHITE)
+    # Center dot
+    ds = 0.15
+    add_shape(slide, MSO_SHAPE.RECTANGLE, l+(s-ds)/2, t+(s-ds)/2, ds, ds, color)
+    return l + s + 0.15
+
+
+def icon_gear(slide, l, t, s, color):
+    """Gear/SPBE icon: hexagon with center dot."""
+    add_shape(slide, MSO_SHAPE.PENTAGON, l, t, s, s, color)
+    add_shape(slide, MSO_SHAPE.RECTANGLE, l+s*0.3, t+s*0.3, s*0.4, s*0.4, WHITE)
+    return l + s + 0.15
+
+
+def icon_city(slide, l, t, s, color):
+    """Building/city icon: rectangle + triangle roof."""
+    add_shape(slide, MSO_SHAPE.RECTANGLE, l, t+s*0.3, s, s*0.7, color)
+    add_shape(slide, MSO_SHAPE.ISOSCELES_TRIANGLE, l, t, s, s*0.5, color)
+    # Window
+    add_shape(slide, MSO_SHAPE.RECTANGLE, l+s*0.3, t+s*0.5, s*0.15, s*0.15, WHITE)
+    return l + s + 0.15
+
+
+def icon_web(slide, l, t, s, color):
+    """Web/globe icon: diamond with lines."""
+    add_shape(slide, MSO_SHAPE.DIAMOND, l, t, s, s, color)
+    # Horizontal line
+    add_shape(slide, MSO_SHAPE.RECTANGLE, l, t+s*0.42, s, s*0.16, WHITE)
+    return l + s + 0.15
+
+
+def icon_phone(slide, l, t, s, color):
+    """Phone/mobile icon: vertical rect with screen."""
+    w = s * 0.55; h = s
+    x = l + (s - w)/2
+    add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, x, t, w, h, color)
+    # Screen area
+    sc = 0.12
+    add_shape(slide, MSO_SHAPE.RECTANGLE, x+sc, t+sc*2, w-2*sc, h-sc*3.5, WHITE)
+    # Button at bottom
+    add_shape(slide, MSO_SHAPE.RECTANGLE, x+w*0.3, t+h-sc, w*0.4, sc*0.8, WHITE)
+    return l + s + 0.15
+
+
+def icon_link(slide, l, t, s, color):
+    """Link/chain icon: two chevrons or parallelograms."""
+    add_shape(slide, MSO_SHAPE.PARALLELOGRAM, l, t, s*0.7, s, color)
+    add_shape(slide, MSO_SHAPE.PARALLELOGRAM, l+s*0.3, t, s*0.7, s, WHITE)
+    return l + s + 0.15
+
+
+def icon_check(slide, l, t, s, color):
+    """Check icon: rounded square with inner diamond."""
+    add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, l, t, s, s, color)
+    add_shape(slide, MSO_SHAPE.DIAMOND, l+s*0.2, t+s*0.2, s*0.6, s*0.6, WHITE)
+    return l + s + 0.15
+
+
+def icon_star(slide, l, t, s, color):
+    """Star/diamond icon."""
+    add_shape(slide, MSO_SHAPE.DIAMOND, l, t, s, s, color)
+    add_shape(slide, MSO_SHAPE.DIAMOND, l+s*0.15, t+s*0.15, s*0.7, s*0.7, WHITE)
+    return l + s + 0.15
+
+
+def icon_arrow(slide, l, t, s, color):
+    """Right arrow."""
+    add_shape(slide, MSO_SHAPE.RIGHT_ARROW, l, t, s, s, color)
+    return l + s + 0.15
+
+
+def icon_box(slide, l, t, s, color):
+    """Simple box with number inside."""
+    add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, l, t, s, s, color)
+    return l + s + 0.15
+
+
+# ─── Layout Helpers ──────────────────────────────────────────────
 
 def build():
     engine = Engine()
     L = engine.L
+
     from pptx import Presentation
     prs = Presentation()
     prs.slide_width = Inches(L.SLIDE_W)
     prs.slide_height = Inches(L.SLIDE_H)
-    engine.prs = prs
 
     MX = L.MARGIN_H
     CW = L.cw
@@ -170,7 +198,6 @@ def build():
     def content_slide(title, sub=None):
         sl = ns()
         solid_bg(sl, WHITE)
-        # Header gradient layers
         accent_bar(sl, 0, 0, L.SLIDE_W, 0.04, GOLD)
         accent_bar(sl, 0, 0.04, L.SLIDE_W, 1.15, DARK)
         accent_bar(sl, 0, 1.19, L.SLIDE_W, 0.03, TEAL)
@@ -191,139 +218,119 @@ def build():
     # ══════════════════════════════════════════════════════════════
     sl = ns()
     solid_bg(sl, DARK)
-
-    # Geometric pattern
     accent_bar(sl, 0, 0, L.SLIDE_W, 0.04, GOLD)
-
-    # Diagonal-like blocks
     accent_bar(sl, L.SLIDE_W-5, -0.5, 5.5, 5, MID)
     accent_bar(sl, L.SLIDE_W-3.8, 3.5, 4.5, 4.5, MID)
-    accent_bar(sl, -0.5, 6, 3.5, 2, MID)
-    accent_bar(sl, -0.5, 0, 2.5, 1.5, MID)
-
-    # Bottom bar
     accent_bar(sl, 0, L.SLIDE_H-0.28, L.SLIDE_W, 0.28, TEAL)
 
-    # Main title with icon block
-    icon_box(sl, MX, 1.6, 0.7, TEAL, ICO_BOX, 22)
-    txt(sl, MX+1.0, 1.6, CW-1.5, 0.8, "RESUME TUPOKSI", 46, bold=True, color=WHITE)
-
-    txt(sl, MX, 2.8, CW, 0.5, "Bidang e-Government", 22, color=TEAL_L)
-    txt(sl, MX, 3.4, CW, 0.4, "Diskominfostandi Kota Bekasi", 14, color=TLIGHT)
-    accent_bar(sl, MX, 4.0, 2.5, Pt(3), GOLD)
-    txt(sl, MX, 4.3, CW, 0.3, "2025", 11, color=TLIGHT)
-
+    # Large decorative app icon
+    icon_app(sl, MX+0.3, 1.5, 0.8, TEAL)
+    txt(sl, MX+1.5, 1.6, CW-2, 0.8, "RESUME TUPOKSI", 46, bold=True, color=WHITE)
+    txt(sl, MX, 2.9, CW, 0.5, "Bidang e-Government", 22, color=TEAL_L)
+    txt(sl, MX, 3.5, CW, 0.4, "Diskominfostandi Kota Bekasi", 14, color=TLIGHT)
+    accent_bar(sl, MX, 4.1, 2.5, Pt(3), GOLD)
+    txt(sl, MX, 4.4, CW, 0.3, "2025", 11, color=TLIGHT)
     PG[0] += 1
 
     # ══════════════════════════════════════════════════════════════
-    #  SLIDE 2 — 3 PILAR DENGAN ICON
+    #  SLIDE 2 — 3 PILAR with shape icons
     # ══════════════════════════════════════════════════════════════
     sl = content_slide("Tiga Pilar Strategis e-Government",
                        "Bidang e-Government menggerakkan 3 pilar utama transformasi digital Kota Bekasi")
 
-    pillars = [
-        ("01", ICO_APP, "Pengembangan Aplikasi\n& Sistem Informasi",
+    pillars_data = [
+        ("01", icon_app,  "Pengembangan Aplikasi\n& Sistem Informasi",
          "Mengawal standar & kualitas\npengembangan aplikasi serta\nmenghubungkan layanan daerah\nmelalui SPLP", DARK),
-        ("02", ICO_GEAR, "Tata Kelola SPBE",
+        ("02", icon_gear, "Tata Kelola SPBE",
          "Merancang roadmap, arsitektur &\nkebijakan SPBE sekaligus\nmemperkuat kapasitas SDM\ndan peran Government CIO", BLUE),
-        ("03", ICO_CITY, "Pengembangan\nKota Cerdas",
+        ("03", icon_city, "Pengembangan\nKota Cerdas",
          "Menyusun masterplan, membangun\nkolaborasi lintas sektor, serta\nmengevaluasi program Smart City\nsecara berkelanjutan", TEAL),
     ]
 
-    n = len(pillars)
+    n = len(pillars_data)
     cw = L.col_width(n, 0.35)
     gap = 0.35
     sx = (L.SLIDE_W - (n*cw + (n-1)*gap)) / 2
-    ch = 4.0
-    cy = 1.55
+    ch = 4.2
+    cy = 1.5
 
-    for i, (num, ico, title, desc, clr) in enumerate(pillars):
+    for i, (num, icon_fn, title, desc, clr) in enumerate(pillars_data):
         cx = sx + i * (cw + gap)
-
-        # Card
         card(sl, cx, cy, cw, ch)
-
-        # Colored top bar
         accent_bar(sl, cx, cy, cw, 0.08, clr)
 
-        # Icon square
-        icon_box(sl, cx+0.25, cy+0.3, 0.55, clr, ico, 20)
+        # Shape icon
+        icon_size = 0.55
+        icon_fn(sl, cx+0.25, cy+0.3, icon_size, clr)
 
-        # Number label
-        txt(sl, cx+0.95, cy+0.35, 0.6, 0.3, f"0{i+1}", 14, bold=True, color=clr)
+        # Number
+        txt(sl, cx+0.95, cy+0.38, 0.5, 0.3, f"0{i+1}", 14, bold=True, color=clr)
 
         # Title
-        txt(sl, cx+0.25, cy+1.05, cw-0.5, 0.85, title, 17, bold=True, color=DARK)
+        txt(sl, cx+0.25, cy+1.15, cw-0.5, 0.85, title, 17, bold=True, color=DARK)
 
         # Separator
-        accent_bar(sl, cx+0.25, cy+2.0, cw-0.5, Pt(1.5), BORDER)
+        accent_bar(sl, cx+0.25, cy+2.1, cw-0.5, Pt(1.5), BORDER)
 
         # Description
-        txt(sl, cx+0.25, cy+2.2, cw-0.5, 1.5, desc, 11, color=TMID)
+        txt(sl, cx+0.25, cy+2.3, cw-0.5, 1.6, desc, 11, color=TMID)
 
     ft(sl)
 
     # ══════════════════════════════════════════════════════════════
-    #  SLIDE 3 — SISTEM & APLIKASI (with icons)
+    #  SLIDE 3 — SISTEM & APLIKASI with shape icons
     # ══════════════════════════════════════════════════════════════
     sl = content_slide("Empat Sistem & Aplikasi Strategis",
                        "Layanan digital yang dioperasikan dan dipelihara oleh Bidang e-Government")
 
-    systems = [
-        (ICO_WEB,   "Web Pemerintah Kota", "Portal utama pemerintah kota\nsebagai pusat informasi & layanan publik", DARK),
-        (ICO_PHONE, "Mobile App PSW", "Aplikasi mobile Pekan Smart City\nsebagai layanan kota cerdas terintegrasi", BLUE),
-        (ICO_CITY,  "Web Kota Cerdas", "Portal informasi & layanan\nprogram Smart City Kota Bekasi", TEAL),
-        (ICO_LINK,  "Aplikasi SPLP", "Sistem Penghubung Layanan Pemerintah\nterintegrasi dengan Kemenkomdigi", GOLD),
+    systems_data = [
+        (icon_web,   "Web Pemerintah Kota",   "Portal utama pemerintah kota\nsebagai pusat info & layanan publik", DARK),
+        (icon_phone, "Mobile App PSW",         "Aplikasi mobile Pekan Smart City\n— layanan kota cerdas terintegrasi", BLUE),
+        (icon_city,  "Web Kota Cerdas",        "Portal informasi & layanan\nprogram Smart City Kota Bekasi", TEAL),
+        (icon_link,  "Aplikasi SPLP",          "Sistem Penghubung Layanan\nPemerintah — terintegrasi Kemenkomdigi", GOLD),
     ]
 
     cw2 = L.col_width(2, 0.4)
     rh2 = 1.8
-    gh2 = 0.4
-    gv2 = 0.35
+    gh2 = 0.4; gv2 = 0.35
     gsx = (L.SLIDE_W - (2*cw2+gh2))/2
     acy = 1.55
 
-    for i, (ico, title, desc, clr) in enumerate(systems):
-        col = i % 2
-        row = i // 2
-        cx = gsx + col * (cw2+gh2)
-        cy = acy + row * (rh2+gv2)
-
+    for i, (icon_fn, title, desc, clr) in enumerate(systems_data):
+        col = i % 2; row = i // 2
+        cx = gsx + col*(cw2+gh2); cy = acy + row*(rh2+gv2)
         card(sl, cx, cy, cw2, rh2)
-
-        # Icon box
-        icon_box(sl, cx+0.25, cy+0.3, 0.65, clr, ico, 22)
-
-        # Title
+        icon_fn(sl, cx+0.25, cy+0.3, 0.6, clr)
         txt(sl, cx+1.1, cy+0.3, cw2-1.4, 0.45, title, 18, bold=True, color=clr)
-
-        # Description
         txt(sl, cx+1.1, cy+0.85, cw2-1.4, 0.7, desc, 12, color=TMID)
 
     ft(sl)
 
     # ══════════════════════════════════════════════════════════════
-    #  SLIDE 4-6 — DETAIL CONTENT with icon blocks
+    #  SLIDE 4-6 — DETAIL with icon per item
     # ══════════════════════════════════════════════════════════════
 
     details = [
         ("Supervisi & Pengembangan Aplikasi Daerah",
          "Lingkup kerja pengembangan sistem informasi dan aplikasi perangkat daerah",
-         [ICO_CHECK, ICO_LINK, ICO_WEB, ICO_GEAR],
+         "✓",
+         [icon_check, icon_link, icon_web, icon_gear],
          ["Supervisi, analisis, dan standarisasi\npengembangan aplikasi perangkat daerah",
           "Mengelola & mengembangkan SPLP\nsebagai tulang punggung integrasi layanan",
-          "Pengelolaan domain dan subdomain\npemerintah daerah secara terpusat",
+          "Pengelolaan domain & subdomain\npemerintah daerah secara terpusat",
           "Sosialisasi & peningkatan kapasitas\nSDM pengelola sistem informasi"]),
         ("Akselerasi Program Kota Cerdas",
          "Strategi dan kolaborasi menuju Smart City yang terintegrasi",
-         [ICO_STAR, ICO_CITY, ICO_APP, ICO_LINK],
+         "◆",
+         [icon_star, icon_city, icon_app, icon_link],
          ["Menyusun strategi, rencana aksi,\ndan masterplan Kota Cerdas",
           "Membangun kolaborasi dengan pemangku\nkepentingan lintas sektor",
           "Mengoordinasikan & mengevaluasi\nprogram Kota Cerdas secara berkala",
           "Menyelaraskan rencana induk dengan\ndokumen perencanaan daerah"]),
         ("Penguatan Tata Kelola SPBE",
-         "Kerangka kerja menuju Sistem Pemerintahan Berbasis Elektronik yang matang",
-         [ICO_GEAR, ICO_LIST, ICO_BOX, ICO_STAR],
+         "Kerangka kerja menuju SPBE yang matang",
+         "⚙",
+         [icon_gear, icon_arrow, icon_app, icon_star],
          ["Menyusun strategi, roadmap, arsitektur,\ndan peta rencana SPBE",
           "Melaksanakan & mengoordinasikan\nprogram SPBE lintas perangkat daerah",
           "Mengembangkan kebijakan &\ntata kelola SPBE yang adaptif",
@@ -332,44 +339,41 @@ def build():
 
     accent_colors = [DARK, TEAL, BLUE]
 
-    for si, (title, sub, icons, items) in enumerate(details):
+    for si, (title, sub, label, icons, items) in enumerate(details):
         sl = content_slide(title, sub)
         accent = accent_colors[si]
 
-        # Left panel
-        accent_bar(sl, MX, 1.5, 0.1, 5.0, accent)
+        # Left decorative panel
+        accent_bar(sl, MX, 1.5, 0.1, 5.2, accent)
 
-        # Items with icon boxes
-        for i, (ico, item) in enumerate(zip(icons, items)):
-            iy = 1.75 + i * 1.15
+        for i, (icon_fn, item) in enumerate(zip(icons, items)):
+            iy = 1.8 + i * 1.15
 
-            # Number box
-            icon_box(sl, MX+0.35, iy, 0.5, accent, ico, 16)
+            # Icon
+            icon_fn(sl, MX+0.35, iy, 0.5, accent)
 
             # Vertical connector
             if i < len(icons)-1:
-                accent_bar(sl, MX+0.58, iy+0.55, Pt(1.5), 0.55, BORDER)
+                accent_bar(sl, MX+0.58, iy+0.6, Pt(1.5), 0.5, BORDER)
 
-            # Title (bold first line)
+            # Text
             lines = item.split('\n')
-            multi_txt(sl, MX+1.1, iy+0.02, CW-1.4, 0.8, lines,
+            multi_txt(sl, MX+1.1, iy+0.04, CW-1.4, 0.8, lines,
                       13, color=TDARK, spacing=1, first_bold=True, first_size=14)
 
         ft(sl)
 
     # ══════════════════════════════════════════════════════════════
-    #  SLIDE 7 — CLOSING with icon
+    #  SLIDE 7 — CLOSING
     # ══════════════════════════════════════════════════════════════
     sl = ns()
     solid_bg(sl, DARK)
-
     accent_bar(sl, 0, 0, L.SLIDE_W, 0.04, GOLD)
     accent_bar(sl, L.SLIDE_W-4.5, -0.5, 5, 5, MID)
-    accent_bar(sl, L.SLIDE_W-3.2, 4, 4, 4, MID)
     accent_bar(sl, 0, L.SLIDE_H-0.28, L.SLIDE_W, 0.28, TEAL)
 
-    # Big icon
-    icon_box(sl, L.SLIDE_W/2-0.45, 1.3, 0.9, TEAL, ICO_STAR, 30)
+    # Big star icon
+    icon_star(sl, L.SLIDE_W/2-0.4, 1.2, 0.8, TEAL)
 
     txt(sl, MX, 2.5, CW, 1.0, "Terima Kasih", 44, bold=True, color=WHITE, align=PA.CENTER)
     txt(sl, MX, 3.6, CW, 0.5, "Bidang e-Government — Diskominfostandi Kota Bekasi",
@@ -378,14 +382,13 @@ def build():
     txt(sl, MX, 4.6, CW, 0.5,
         "\"Mewujudkan tata kelola pemerintahan yang cerdas,\nterpadu, dan berkelanjutan\"",
         12, color=TLIGHT, align=PA.CENTER)
-
     PG[0] += 1
 
     # ── Save ──
     out = "RESUME_TUPOKSI_egov.pptx"
     prs.save(out)
     print(f"✅ PPT selesai: {out}")
-    print(f"   {len(prs.slides)} slide — creative design with icons!")
+    print(f"   {len(prs.slides)} slide — all icons are SHAPES (not text)")
     return out
 
 
